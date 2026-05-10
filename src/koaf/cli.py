@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import sys
 
 from rich.console import Console
 from rich.panel import Panel
@@ -22,6 +24,16 @@ def parse_args() -> argparse.Namespace:
         "--explain",
         action="store_true",
         help="Show beginner-friendly explanations for each finding.",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print machine-readable JSON instead of Rich tables.",
+    )
+    parser.add_argument(
+        "--no-external",
+        action="store_true",
+        help="Skip external IP lookup to avoid contacting a third-party IP service.",
     )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging.")
     return parser.parse_args()
@@ -69,21 +81,37 @@ def render_explanations(console: Console, title: str, findings: list[Finding]) -
         console.print(Panel(body, title=finding.title, expand=False))
 
 
+def render_json(findings: list[Finding], alerts: list[Finding]) -> None:
+    payload = {
+        "tool": "KOAF",
+        "version": __version__,
+        "mode": "audit",
+        "findings": [finding.to_dict() for finding in findings],
+        "correlation_alerts": [alert.to_dict() for alert in alerts],
+    }
+    print(json.dumps(payload, indent=2))
+
+
 def main() -> int:
     args = parse_args()
-    console = Console()
-    logger = setup_logger(verbose=args.verbose)
-
-    console.print(f"[bold cyan]KOAF[/bold cyan] v{__version__}")
-    console.print("[italic]Kali OPSEC Automation Framework - read-only audit mode[/italic]\n")
+    console = Console(stderr=args.json)
+    logger = setup_logger(verbose=args.verbose, enable_console=not args.json)
 
     if not args.audit:
         console.print("[red]No mode selected.[/red] Use: koaf --audit")
         return 2
 
+    if not args.json:
+        console.print(f"[bold cyan]KOAF[/bold cyan] v{__version__}")
+        console.print("[italic]Kali OPSEC Automation Framework - read-only audit mode[/italic]\n")
+
     logger.info("Mode selected: AUDIT")
-    engine = AuditEngine(logger)
+    engine = AuditEngine(logger, external_enabled=not args.no_external)
     findings, alerts = engine.run()
+
+    if args.json:
+        render_json(findings, alerts)
+        return 0
 
     render_table(console, "KOAF Audit Findings", findings)
 
@@ -96,3 +124,7 @@ def main() -> int:
             render_explanations(console, "Correlation explanations", alerts)
 
     return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
