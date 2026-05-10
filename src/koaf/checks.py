@@ -190,7 +190,21 @@ def check_dns() -> list[Finding]:
     return findings
 
 
-def check_external() -> list[Finding]:
+def check_external(enabled: bool = True) -> list[Finding]:
+    if not enabled:
+        return [
+            Finding(
+                category="External",
+                title="Public IPv4",
+                status="Skipped by user",
+                severity=Severity.INFO,
+                details=(
+                    "External IP lookup was disabled with --no-external. "
+                    "This avoids contacting a third-party IP check service."
+                ),
+            )
+        ]
+
     try:
         with urlopen("https://api.ipify.org?format=json", timeout=5) as response:
             data = json.loads(response.read().decode())
@@ -202,7 +216,10 @@ def check_external() -> list[Finding]:
                 title="Public IPv4",
                 status=ip,
                 severity=Severity.INFO,
-                details="Shows the IPv4 address observed by an external service.",
+                details=(
+                    "Shows the IPv4 address observed by an external service. "
+                    "This helps users compare their visible IP with their expected VPN or ISP exit."
+                ),
             )
         ]
     except Exception as exc:
