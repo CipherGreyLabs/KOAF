@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 
 from koaf import __version__
@@ -17,6 +18,11 @@ def parse_args() -> argparse.Namespace:
         description="KOAF: Kali OPSEC anonymity surface audit tool.",
     )
     parser.add_argument("--audit", action="store_true", help="Run read-only audit mode.")
+    parser.add_argument(
+        "--explain",
+        action="store_true",
+        help="Show beginner-friendly explanations for each finding.",
+    )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging.")
     return parser.parse_args()
 
@@ -46,6 +52,23 @@ def render_table(console: Console, title: str, findings: list[Finding]) -> None:
     console.print(table)
 
 
+def render_explanations(console: Console, title: str, findings: list[Finding]) -> None:
+    console.print(f"\n[bold]{title}[/bold]")
+
+    for finding in findings:
+        body = (
+            f"[bold]Category:[/bold] {finding.category}\n"
+            f"[bold]Status:[/bold] {finding.status}\n"
+            f"[bold]Severity:[/bold] {finding.severity.value}\n\n"
+            f"{finding.details}"
+        )
+
+        if finding.evidence:
+            body += f"\n\n[bold]Evidence:[/bold]\n{finding.evidence}"
+
+        console.print(Panel(body, title=finding.title, expand=False))
+
+
 def main() -> int:
     args = parse_args()
     console = Console()
@@ -66,5 +89,10 @@ def main() -> int:
 
     if alerts:
         render_table(console, "Correlation Alerts", alerts)
+
+    if args.explain:
+        render_explanations(console, "Finding explanations", findings)
+        if alerts:
+            render_explanations(console, "Correlation explanations", alerts)
 
     return 0
