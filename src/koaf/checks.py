@@ -277,15 +277,45 @@ def check_firefox() -> list[Finding]:
     )
 
     checks = [
-        ("privacy.resistFingerprinting", "true", "Fingerprinting resistance"),
-        ("media.peerconnection.enabled", "false", "WebRTC disabled"),
-        ("toolkit.telemetry.enabled", "false", "Telemetry disabled"),
-        ("network.trr.mode", "5", "Firefox DoH disabled"),
-        ("privacy.trackingprotection.enabled", "true", "Tracking protection enabled"),
-        ("dom.security.https_only_mode", "true", "HTTPS-Only mode enabled"),
+        (
+            "privacy.resistFingerprinting",
+            "true",
+            "Firefox fingerprinting resistance",
+            "Expected Firefox preference: privacy.resistFingerprinting = true.",
+        ),
+        (
+            "media.peerconnection.enabled",
+            "false",
+            "Firefox WebRTC exposure",
+            "Expected Firefox preference: media.peerconnection.enabled = false to reduce WebRTC leak risk.",
+        ),
+        (
+            "toolkit.telemetry.enabled",
+            "false",
+            "Firefox telemetry",
+            "Expected Firefox preference: toolkit.telemetry.enabled = false.",
+        ),
+        (
+            "network.trr.mode",
+            "5",
+            "Firefox DNS-over-HTTPS mode",
+            "Expected Firefox preference: network.trr.mode = 5 to explicitly disable Firefox DoH override.",
+        ),
+        (
+            "privacy.trackingprotection.enabled",
+            "true",
+            "Firefox tracking protection",
+            "Expected Firefox preference: privacy.trackingprotection.enabled = true.",
+        ),
+        (
+            "dom.security.https_only_mode",
+            "true",
+            "Firefox HTTPS-Only mode",
+            "Expected Firefox preference: dom.security.https_only_mode = true.",
+        ),
     ]
 
-    for key, expected, title in checks:
+    for key, expected, title, details in checks:
         exact = f'user_pref("{key}", {expected});'
         if exact in combined:
             status = "Configured securely"
@@ -294,7 +324,7 @@ def check_firefox() -> list[Finding]:
             status = "Present with different value"
             severity = Severity.HIGH
         else:
-            status = "Not set"
+            status = "Not explicitly set"
             severity = Severity.MEDIUM
 
         findings.append(
@@ -303,7 +333,7 @@ def check_firefox() -> list[Finding]:
                 title=title,
                 status=status,
                 severity=severity,
-                details=f"Expected Firefox preference: {key} = {expected}.",
+                details=details,
             )
         )
 
