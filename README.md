@@ -1,8 +1,12 @@
 # KOAF - Kali OPSEC Automation Framework
 
-KOAF is a Kali Linux OPSEC and anonymity surface audit tool.
+KOAF is a beginner friendly Kali Linux OPSEC and privacy audit tool that helps new Linux users understand what their system may expose online.
 
-It performs read-only checks for:
+It is designed for people who are learning Kali, Linux networking, VPNs, DNS, IPv6, and browser privacy. Instead of silently changing system settings, KOAF explains what it finds so users can better understand their privacy and exposure posture.
+
+## What KOAF checks
+
+KOAF currently performs read-only checks for:
 
 - Local VPN interface visibility
 - IPv4 and IPv6 exposure
@@ -12,7 +16,9 @@ It performs read-only checks for:
 - Hostname entropy
 - Firefox privacy preference posture
 
-Audit mode does not modify the system.
+## Safety
+
+Audit mode does not modify the system. KOAF is currently focused on visibility, explanation, and learning rather than automatic hardening.
 
 ## Usage
 
