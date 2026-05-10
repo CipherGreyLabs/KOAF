@@ -92,7 +92,7 @@ pip install -e .
 
 ## Usage
 
-Run the audit:
+Run the standard audit:
 
 ```bash
 python3 -m koaf --audit
@@ -102,6 +102,12 @@ Or, after editable install:
 
 ```bash
 koaf --audit
+```
+
+For beginner friendly explanations of each finding, add `--explain`:
+
+```bash
+koaf --audit --explain
 ```
 
 ## Example output
@@ -123,6 +129,8 @@ No guest-side VPN interface detected
 DNS stub resolver requires interpretation
 External IP available without guest VPN interface
 ```
+
+With `--explain`, KOAF also prints plain language explanations for each finding and correlation alert.
 
 ## Important limitations
 
