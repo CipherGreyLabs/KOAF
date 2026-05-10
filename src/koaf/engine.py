@@ -5,22 +5,32 @@ from koaf.models import Finding, Severity
 
 
 class AuditEngine:
-    def __init__(self, logger):
+    def __init__(self, logger, external_enabled: bool = True):
         self.logger = logger
+        self.external_enabled = external_enabled
 
     def run(self) -> tuple[list[Finding], list[Finding]]:
         self.logger.info("Starting KOAF audit")
 
         findings: list[Finding] = []
 
-        for check in [check_network, check_dns, check_external, check_host, check_firefox]:
+        checks = [
+            check_network,
+            check_dns,
+            lambda: check_external(enabled=self.external_enabled),
+            check_host,
+            check_firefox,
+        ]
+
+        for check in checks:
+            check_name = getattr(check, "__name__", "check_external")
             try:
                 findings.extend(check())
             except Exception as exc:
                 findings.append(
                     Finding(
                         category="Engine",
-                        title=f"{check.__name__} failed",
+                        title=f"{check_name} failed",
                         status=str(exc),
                         severity=Severity.HIGH,
                         details="The check failed but the audit continued safely.",
@@ -80,7 +90,20 @@ class AuditEngine:
                 )
             )
 
-        if external and external.status != "Unable to retrieve" and vpn and vpn.status == "Not detected inside Kali":
+        if external and external.status == "Skipped by user":
+            alerts.append(
+                Finding(
+                    category="Correlation",
+                    title="External route check skipped",
+                    status="Reduced confidence",
+                    severity=Severity.INFO,
+                    details=(
+                        "External IP lookup was disabled. This is privacy friendly, but KOAF cannot compare the visible "
+                        "internet-facing IP with the local routing model."
+                    ),
+                )
+            )
+        elif external and external.status != "Unable to retrieve" and vpn and vpn.status == "Not detected inside Kali":
             alerts.append(
                 Finding(
                     category="Correlation",
