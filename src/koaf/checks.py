@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import json
 import socket
 from pathlib import Path
@@ -7,6 +8,32 @@ from urllib.request import urlopen
 
 from koaf.models import Finding, Severity
 from koaf.shell import run_cmd
+
+
+def _extract_ipv6_addresses(ip_output: str) -> tuple[list[str], list[str]]:
+    """Return link-local and global IPv6 addresses from `ip a` output."""
+    link_local: list[str] = []
+    global_addrs: list[str] = []
+
+    for line in ip_output.splitlines():
+        line = line.strip()
+        if not line.startswith("inet6 "):
+            continue
+
+        raw = line.split()[1].split("/")[0]
+        try:
+            addr = ipaddress.ip_address(raw)
+        except ValueError:
+            continue
+
+        if addr.is_loopback:
+            continue
+        if addr.is_link_local:
+            link_local.append(raw)
+        else:
+            global_addrs.append(raw)
+
+    return link_local, global_addrs
 
 
 def check_network() -> list[Finding]:
@@ -22,24 +49,57 @@ def check_network() -> list[Finding]:
     findings.append(
         Finding(
             category="Network",
-            title="Local VPN interface",
-            status="Detected" if vpn_detected else "Not detected",
+            title="Local VPN interface inside Kali",
+            status="Detected" if vpn_detected else "Not detected inside Kali",
             severity=Severity.LOW if vpn_detected else Severity.MEDIUM,
-            details="Checks for tun, tap, wg, or ppp interfaces inside the Kali guest.",
+            details=(
+                "Checks for tun, tap, wg, or ppp interfaces inside the Kali guest. "
+                "If your VPN runs on the host machine, this may still show as not detected."
+            ),
         )
     )
 
-    ipv6_present = "inet6" in combined
-    ipv6_default = "default" in ip6_route.stdout
+    link_local_v6, global_v6 = _extract_ipv6_addresses(ip_addr.stdout)
+    ipv6_default = any(line.startswith("default") for line in ip6_route.stdout.splitlines())
+
+    if global_v6 and ipv6_default:
+        ipv6_status = "Global IPv6 with default route"
+        ipv6_severity = Severity.MEDIUM
+        ipv6_details = (
+            "A global IPv6 address and IPv6 default route are present. This can create a separate "
+            "identity surface if IPv6 is not routed through the same privacy path as IPv4."
+        )
+        ipv6_evidence = ip6_route.stdout
+    elif global_v6:
+        ipv6_status = "Global IPv6 address present"
+        ipv6_severity = Severity.MEDIUM
+        ipv6_details = (
+            "A global IPv6 address is present. Even without a visible default route, verify that "
+            "applications cannot use IPv6 unexpectedly."
+        )
+        ipv6_evidence = ", ".join(global_v6)
+    elif link_local_v6:
+        ipv6_status = "Only link-local IPv6 present"
+        ipv6_severity = Severity.LOW
+        ipv6_details = (
+            "Only link-local IPv6 addresses were detected. This is common on Linux and usually does "
+            "not indicate public IPv6 exposure by itself."
+        )
+        ipv6_evidence = ", ".join(link_local_v6)
+    else:
+        ipv6_status = "IPv6 not present"
+        ipv6_severity = Severity.LOW
+        ipv6_details = "No non-loopback IPv6 addresses were detected."
+        ipv6_evidence = ""
 
     findings.append(
         Finding(
             category="Network",
             title="IPv6 exposure",
-            status="IPv6 present" if ipv6_present else "IPv6 not present",
-            severity=Severity.MEDIUM if ipv6_present else Severity.LOW,
-            details="Detects IPv6 addresses in the guest. IPv6 can bypass IPv4-only privacy assumptions.",
-            evidence=ip6_route.stdout if ipv6_default else "",
+            status=ipv6_status,
+            severity=ipv6_severity,
+            details=ipv6_details,
+            evidence=ipv6_evidence,
         )
     )
 
@@ -50,7 +110,7 @@ def check_network() -> list[Finding]:
             title="Default route",
             status=default_route,
             severity=Severity.INFO,
-            details="Shows the primary IPv4 route used by the guest.",
+            details="Shows the primary IPv4 route used by the Kali guest.",
         )
     )
 
@@ -79,15 +139,55 @@ def check_dns() -> list[Finding]:
             if len(parts) >= 2:
                 resolvers.append(parts[1])
 
-    return [
+    if not resolvers:
+        return [
+            Finding(
+                category="DNS",
+                title="Configured resolvers",
+                status="No resolvers detected",
+                severity=Severity.HIGH,
+                details="No nameserver entries were found in /etc/resolv.conf.",
+            )
+        ]
+
+    findings = [
         Finding(
             category="DNS",
             title="Configured resolvers",
-            status=", ".join(resolvers) if resolvers else "No resolvers detected",
-            severity=Severity.LOW if resolvers else Severity.HIGH,
+            status=", ".join(resolvers),
+            severity=Severity.LOW,
             details="Parses /etc/resolv.conf to identify configured DNS resolvers.",
         )
     ]
+
+    if any(resolver.startswith("127.") for resolver in resolvers):
+        resolved = run_cmd(["resolvectl", "status"], timeout=3)
+        if resolved.returncode == 0 and resolved.stdout:
+            details = (
+                "A local DNS stub resolver was detected. This usually means systemd-resolved is "
+                "handling DNS locally. KOAF also captured resolvectl status so users can inspect "
+                "the real upstream DNS servers."
+            )
+            evidence = resolved.stdout[:1200]
+        else:
+            details = (
+                "A local DNS stub resolver was detected. This usually means DNS is handled by a "
+                "local service such as systemd-resolved. Upstream DNS could not be collected."
+            )
+            evidence = resolved.stderr
+
+        findings.append(
+            Finding(
+                category="DNS",
+                title="Local DNS stub resolver",
+                status="Detected" if resolved.returncode == 0 else "Detected, upstream unknown",
+                severity=Severity.INFO,
+                details=details,
+                evidence=evidence,
+            )
+        )
+
+    return findings
 
 
 def check_external() -> list[Finding]:
@@ -180,6 +280,9 @@ def check_firefox() -> list[Finding]:
         ("privacy.resistFingerprinting", "true", "Fingerprinting resistance"),
         ("media.peerconnection.enabled", "false", "WebRTC disabled"),
         ("toolkit.telemetry.enabled", "false", "Telemetry disabled"),
+        ("network.trr.mode", "5", "Firefox DoH disabled"),
+        ("privacy.trackingprotection.enabled", "true", "Tracking protection enabled"),
+        ("dom.security.https_only_mode", "true", "HTTPS-Only mode enabled"),
     ]
 
     for key, expected, title in checks:
