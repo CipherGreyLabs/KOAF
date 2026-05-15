@@ -56,13 +56,18 @@ class AuditEngine:
                     status="Review routing model",
                     severity=Severity.MEDIUM,
                     details=(
-                        "KOAF does not see a VPN interface inside Kali. This does not prove that "
-                        "your host VPN is inactive. Compare the external IPv4 result with your expected VPN or ISP exit."
+                        "KOAF does not see a VPN interface inside Kali. This does not prove "
+                        "that your host VPN is inactive. Compare the external IPv4 result "
+                        "with your expected VPN or ISP exit."
                     ),
                 )
             )
 
-        if ipv6 and ipv6.status in {"Global IPv6 with default route", "Global IPv6 address present"}:
+        global_ipv6_statuses = {
+            "Global IPv6 with default route",
+            "Global IPv6 address present",
+        }
+        if ipv6 and ipv6.status in global_ipv6_statuses:
             alerts.append(
                 Finding(
                     category="Correlation",
@@ -70,8 +75,9 @@ class AuditEngine:
                     status=ipv6.status,
                     severity=Severity.MEDIUM,
                     details=(
-                        "IPv6 may create a separate identity surface if it is not routed consistently with IPv4. "
-                        "This matters especially when privacy assumptions are based only on IPv4 VPN routing."
+                        "IPv6 may create a separate identity surface if it is not routed "
+                        "consistently with IPv4. This matters especially when privacy "
+                        "assumptions are based only on IPv4 VPN routing."
                     ),
                 )
             )
@@ -84,8 +90,9 @@ class AuditEngine:
                     status="Inspect upstream DNS",
                     severity=Severity.INFO,
                     details=(
-                        "The system is using a local DNS stub resolver. Beginners may see 127.0.0.53 and assume "
-                        "it is the final DNS provider, but it usually forwards requests upstream through systemd-resolved."
+                        "The system is using a local DNS stub resolver. Beginners may see "
+                        "127.0.0.53 and assume it is the final DNS provider, but it usually "
+                        "forwards requests upstream through systemd-resolved."
                     ),
                 )
             )
@@ -98,12 +105,18 @@ class AuditEngine:
                     status="Reduced confidence",
                     severity=Severity.INFO,
                     details=(
-                        "External IP lookup was disabled. This is privacy friendly, but KOAF cannot compare the visible "
-                        "internet-facing IP with the local routing model."
+                        "External IP lookup was disabled. This is privacy friendly, but "
+                        "KOAF cannot compare the visible internet-facing IP with the local "
+                        "routing model."
                     ),
                 )
             )
-        elif external and external.status != "Unable to retrieve" and vpn and vpn.status == "Not detected inside Kali":
+        elif (
+            external
+            and external.status != "Unable to retrieve"
+            and vpn
+            and vpn.status == "Not detected inside Kali"
+        ):
             alerts.append(
                 Finding(
                     category="Correlation",
@@ -111,8 +124,9 @@ class AuditEngine:
                     status="Host routing may be involved",
                     severity=Severity.INFO,
                     details=(
-                        "KOAF can see a public IPv4 address but no VPN interface inside Kali. If you use a VPN on the host, "
-                        "this is expected; future versions will classify the external provider more deeply."
+                        "KOAF can see a public IPv4 address but no VPN interface inside "
+                        "Kali. If you use a VPN on the host, this is expected. Future "
+                        "versions will classify the external provider more deeply."
                     ),
                 )
             )
