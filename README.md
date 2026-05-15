@@ -29,6 +29,7 @@ KOAF v0.1.0 performs read only checks for:
 * DNS resolver configuration
 * Local DNS stub resolver detection
 * External public IPv4 visibility
+* Optional external IP lookup skipping with `--no-external`
 * Hostname entropy
 * Firefox privacy preference posture
 
@@ -66,6 +67,12 @@ KOAF does not:
 * Delete logs
 * Claim to guarantee anonymity
 
+By default, KOAF contacts an external IP lookup service to show the public IPv4 address visible from the system. If you do not want KOAF to contact an external IP lookup service, use:
+
+```bash
+koaf --audit --no-external
+```
+
 Future hardening features should be controlled, explainable, and reversible.
 
 ## Installation
@@ -90,6 +97,12 @@ Install KOAF in editable mode:
 pip install -e .
 ```
 
+For development and tests:
+
+```bash
+pip install -e .[dev]
+```
+
 ## Usage
 
 Run the standard audit:
@@ -108,6 +121,24 @@ For beginner friendly explanations of each finding, add `--explain`:
 
 ```bash
 koaf --audit --explain
+```
+
+To skip the external public IP lookup:
+
+```bash
+koaf --audit --no-external
+```
+
+To print machine readable JSON:
+
+```bash
+koaf --audit --json
+```
+
+You can combine options:
+
+```bash
+koaf --audit --no-external --json
 ```
 
 ## Example output
@@ -132,6 +163,38 @@ External IP available without guest VPN interface
 
 With `--explain`, KOAF also prints plain language explanations for each finding and correlation alert.
 
+Example JSON shape:
+
+```json
+{
+  "tool": "KOAF",
+  "version": "0.1.0",
+  "mode": "audit",
+  "findings": [],
+  "correlation_alerts": []
+}
+```
+
+## Development checks
+
+Run syntax checks:
+
+```bash
+python -m compileall src/koaf
+```
+
+Run linting:
+
+```bash
+ruff check .
+```
+
+Run tests:
+
+```bash
+pytest
+```
+
 ## Important limitations
 
 KOAF does not prove that you are anonymous.
@@ -152,7 +215,7 @@ Planned improvements:
 * External IP provider and ASN classification
 * Better DNS upstream detection
 * DNS versus external route correlation
-* More beginner friendly explanations with an explain mode
+* More beginner friendly explanations
 * Expanded Firefox privacy checks
 * Optional controlled hardening with rollback support
 
@@ -161,6 +224,10 @@ Planned improvements:
 Current version: **v0.1.0**
 
 KOAF is currently an audit first foundation. The focus is visibility, explanation, and safe learning before adding automatic hardening.
+
+## License
+
+KOAF is released under the MIT License.
 
 ## Ethical use
 
