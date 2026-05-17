@@ -1,8 +1,10 @@
 # KOAF
 
+[![CI](https://github.com/CipherGreyLabs/KOAF/actions/workflows/ci.yml/badge.svg)](https://github.com/CipherGreyLabs/KOAF/actions/workflows/ci.yml)
+
 **Kali OPSEC Automation Framework**
 
-KOAF is a beginner friendly Kali Linux privacy and OPSEC audit tool. It helps new Linux and Kali users understand what their system may expose online, such as VPN visibility, DNS settings, IPv6 exposure, hostname identity, and Firefox privacy settings.
+KOAF is a beginner friendly Kali Linux privacy and OPSEC audit tool. It helps new Linux and Kali users understand what their system may expose online, such as VPN visibility, DNS settings, IPv6 exposure, hostname identity, public IP routing, and Firefox privacy settings.
 
 The goal is simple: make privacy related system exposure easier to see and understand.
 
@@ -29,9 +31,14 @@ KOAF v0.1.0 performs read only checks for:
 * DNS resolver configuration
 * Local DNS stub resolver detection
 * External public IPv4 visibility
+* External provider classification using public IP registration data
+* Public IPv6 visibility check
 * Optional external IP lookup skipping with `--no-external`
+* Privacy safe output redaction with `--redact`
 * Hostname entropy
+* Linux machine ID presence
 * Firefox privacy preference posture
+* Overall privacy surface summary
 
 Firefox checks currently include:
 
@@ -41,6 +48,8 @@ Firefox checks currently include:
 * DNS over HTTPS mode
 * Tracking protection
 * HTTPS Only mode
+* WebGL exposure
+* Media device enumeration
 
 ## Why this matters
 
@@ -52,7 +61,8 @@ KOAF helps show common exposure points, for example:
 * IPv6 can create a separate network identity surface
 * DNS may be handled by a local stub resolver that forwards upstream
 * Firefox settings can affect browser privacy posture
-* Hostnames can make systems easier to recognize or correlate
+* Hostnames and machine IDs can make systems easier to recognize or correlate
+* A public IP may look like a residential ISP, VPN, datacenter, or unknown provider type
 
 ## Safety
 
@@ -65,12 +75,20 @@ KOAF does not:
 * Modify Firefox settings
 * Change DNS settings
 * Delete logs
+* Spoof identifiers
 * Claim to guarantee anonymity
 
-By default, KOAF contacts an external IP lookup service to show the public IPv4 address visible from the system. If you do not want KOAF to contact an external IP lookup service, use:
+By default, KOAF contacts external lookup services to show public IPv4, public IPv6 availability, and basic provider classification. If you do not want KOAF to contact external lookup services, use:
 
 ```bash
 koaf --audit --no-external
+```
+
+If you want to share output safely, use redaction:
+
+```bash
+koaf --audit --redact
+koaf --audit --json --redact
 ```
 
 Future hardening features should be controlled, explainable, and reversible.
@@ -123,10 +141,16 @@ For beginner friendly explanations of each finding, add `--explain`:
 koaf --audit --explain
 ```
 
-To skip the external public IP lookup:
+To skip external lookup services:
 
 ```bash
 koaf --audit --no-external
+```
+
+To redact sensitive values such as IPs, routes, hostnames, and profile names:
+
+```bash
+koaf --audit --redact
 ```
 
 To print machine readable JSON:
@@ -138,7 +162,7 @@ koaf --audit --json
 You can combine options:
 
 ```bash
-koaf --audit --no-external --json
+koaf --audit --no-external --json --redact
 ```
 
 ## Example output
@@ -146,11 +170,13 @@ koaf --audit --no-external --json
 KOAF displays findings in tables, grouped by category:
 
 ```text
-Network   Local VPN interface inside Kali   Not detected inside Kali   MEDIUM
-Network   IPv6 exposure                     Only link-local IPv6       LOW
-DNS       Configured resolvers              127.0.0.53                 LOW
-External  Public IPv4                       Detected                   INFO
-Browser   Firefox WebRTC exposure           Configured securely        LOW
+Network   Local VPN interface inside Kali     Not detected inside Kali      MEDIUM
+Network   IPv6 exposure                       Only link-local IPv6 present  LOW
+DNS       Configured resolvers                127.0.0.53                    LOW
+External  Public IPv4                         Detected                      INFO
+External  External provider classification    Residential ISP-like provider INFO
+Browser   Firefox WebRTC exposure             Configured securely           LOW
+Summary   Overall privacy surface             Some exposure indicators      MEDIUM
 ```
 
 It also shows correlation alerts when a finding needs interpretation, for example:
@@ -159,6 +185,7 @@ It also shows correlation alerts when a finding needs interpretation, for exampl
 No guest-side VPN interface detected
 DNS stub resolver requires interpretation
 External IP available without guest VPN interface
+Public IPv6 visible externally
 ```
 
 With `--explain`, KOAF also prints plain language explanations for each finding and correlation alert.
@@ -170,6 +197,7 @@ Example JSON shape:
   "tool": "KOAF",
   "version": "0.1.0",
   "mode": "audit",
+  "redacted": true,
   "findings": [],
   "correlation_alerts": []
 }
@@ -201,9 +229,8 @@ KOAF does not prove that you are anonymous.
 
 Current limitations:
 
-* External IP provider classification is not implemented yet
-* DNS leak testing is not implemented yet
-* ASN and ISP detection are not implemented yet
+* External provider classification is heuristic and may be wrong
+* DNS leak testing is not fully implemented yet
 * Browser fingerprinting is limited to selected Firefox preferences
 * Host VPN detection is inferred indirectly and not proven from inside Kali
 * Hardening mode is not implemented yet
@@ -212,12 +239,11 @@ Current limitations:
 
 Planned improvements:
 
-* External IP provider and ASN classification
 * Better DNS upstream detection
 * DNS versus external route correlation
 * More beginner friendly explanations
-* Expanded Firefox privacy checks
 * Optional controlled hardening with rollback support
+* Stronger test coverage around CLI behavior
 
 ## Project status
 
