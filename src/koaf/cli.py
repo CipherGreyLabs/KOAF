@@ -31,6 +31,11 @@ def parse_args() -> argparse.Namespace:
         help="Print machine-readable JSON instead of Rich tables.",
     )
     parser.add_argument(
+        "--redact",
+        action="store_true",
+        help="Redact sensitive values such as public IPs, routes, hostnames, and profile names.",
+    )
+    parser.add_argument(
         "--no-external",
         action="store_true",
         help="Skip external IP lookup to avoid contacting a third-party IP service.",
@@ -39,14 +44,19 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def render_table(console: Console, title: str, findings: list[Finding]) -> None:
+def _display_finding(finding: Finding, redact: bool) -> Finding:
+    return finding.redacted() if redact else finding
+
+
+def render_table(console: Console, title: str, findings: list[Finding], redact: bool) -> None:
     table = Table(title=title)
     table.add_column("Category", style="cyan")
     table.add_column("Finding")
     table.add_column("Status")
     table.add_column("Severity", style="bold")
 
-    for finding in findings:
+    for original in findings:
+        finding = _display_finding(original, redact)
         color = {
             Severity.INFO: "white",
             Severity.LOW: "green",
@@ -64,10 +74,16 @@ def render_table(console: Console, title: str, findings: list[Finding]) -> None:
     console.print(table)
 
 
-def render_explanations(console: Console, title: str, findings: list[Finding]) -> None:
+def render_explanations(
+    console: Console,
+    title: str,
+    findings: list[Finding],
+    redact: bool,
+) -> None:
     console.print(f"\n[bold]{title}[/bold]")
 
-    for finding in findings:
+    for original in findings:
+        finding = _display_finding(original, redact)
         body = (
             f"[bold]Category:[/bold] {finding.category}\n"
             f"[bold]Status:[/bold] {finding.status}\n"
@@ -81,13 +97,14 @@ def render_explanations(console: Console, title: str, findings: list[Finding]) -
         console.print(Panel(body, title=finding.title, expand=False))
 
 
-def render_json(findings: list[Finding], alerts: list[Finding]) -> None:
+def render_json(findings: list[Finding], alerts: list[Finding], redact: bool) -> None:
     payload = {
         "tool": "KOAF",
         "version": __version__,
         "mode": "audit",
-        "findings": [finding.to_dict() for finding in findings],
-        "correlation_alerts": [alert.to_dict() for alert in alerts],
+        "redacted": redact,
+        "findings": [finding.to_dict(redact=redact) for finding in findings],
+        "correlation_alerts": [alert.to_dict(redact=redact) for alert in alerts],
     }
     print(json.dumps(payload, indent=2))
 
@@ -110,18 +127,18 @@ def main() -> int:
     findings, alerts = engine.run()
 
     if args.json:
-        render_json(findings, alerts)
+        render_json(findings, alerts, redact=args.redact)
         return 0
 
-    render_table(console, "KOAF Audit Findings", findings)
+    render_table(console, "KOAF Audit Findings", findings, redact=args.redact)
 
     if alerts:
-        render_table(console, "Correlation Alerts", alerts)
+        render_table(console, "Correlation Alerts", alerts, redact=args.redact)
 
     if args.explain:
-        render_explanations(console, "Finding explanations", findings)
+        render_explanations(console, "Finding explanations", findings, redact=args.redact)
         if alerts:
-            render_explanations(console, "Correlation explanations", alerts)
+            render_explanations(console, "Correlation explanations", alerts, redact=args.redact)
 
     return 0
 
