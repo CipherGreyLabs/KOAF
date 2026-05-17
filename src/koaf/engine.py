@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import Counter
+
 from koaf.checks import check_dns, check_external, check_firefox, check_host, check_network
 from koaf.models import Finding, Severity
 
@@ -38,6 +40,7 @@ class AuditEngine:
                 )
 
         correlation = self.correlate(findings)
+        correlation.extend(self.score(findings, correlation))
         return findings, correlation
 
     def correlate(self, findings: list[Finding]) -> list[Finding]:
@@ -46,6 +49,8 @@ class AuditEngine:
         vpn = next((f for f in findings if f.title == "Local VPN interface inside Kali"), None)
         ipv6 = next((f for f in findings if f.title == "IPv6 exposure"), None)
         external = next((f for f in findings if f.title == "Public IPv4"), None)
+        public_ipv6 = next((f for f in findings if f.title == "Public IPv6"), None)
+        provider = next((f for f in findings if f.title == "External provider classification"), None)
         dns_stub = next((f for f in findings if f.title == "Local DNS stub resolver"), None)
 
         if vpn and vpn.status == "Not detected inside Kali":
@@ -57,7 +62,7 @@ class AuditEngine:
                     severity=Severity.MEDIUM,
                     details=(
                         "KOAF does not see a VPN interface inside Kali. This does not prove "
-                        "that your host VPN is inactive. Compare the external IPv4 result "
+                        "that your host VPN is inactive. Compare the external IP results "
                         "with your expected VPN or ISP exit."
                     ),
                 )
@@ -71,13 +76,30 @@ class AuditEngine:
             alerts.append(
                 Finding(
                     category="Correlation",
-                    title="IPv6 correlation surface",
+                    title="Local IPv6 correlation surface",
                     status=ipv6.status,
                     severity=Severity.MEDIUM,
                     details=(
                         "IPv6 may create a separate identity surface if it is not routed "
                         "consistently with IPv4. This matters especially when privacy "
                         "assumptions are based only on IPv4 VPN routing."
+                    ),
+                )
+            )
+
+        if public_ipv6 and public_ipv6.status not in {
+            "Not detected or unavailable",
+            "Unable to retrieve",
+        }:
+            alerts.append(
+                Finding(
+                    category="Correlation",
+                    title="Public IPv6 visible externally",
+                    status="Verify IPv6 route consistency",
+                    severity=Severity.MEDIUM,
+                    details=(
+                        "A public IPv6 address is visible externally. Compare IPv4 and IPv6 "
+                        "exit paths to detect split routing or IPv6 leak surfaces."
                     ),
                 )
             )
@@ -93,6 +115,21 @@ class AuditEngine:
                         "The system is using a local DNS stub resolver. Beginners may see "
                         "127.0.0.53 and assume it is the final DNS provider, but it usually "
                         "forwards requests upstream through systemd-resolved."
+                    ),
+                )
+            )
+
+        if provider and "Datacenter" in provider.status:
+            alerts.append(
+                Finding(
+                    category="Correlation",
+                    title="External provider looks datacenter-like",
+                    status="Review expected exit provider",
+                    severity=Severity.INFO,
+                    details=(
+                        "The visible external provider looks like hosting or datacenter "
+                        "infrastructure. This may be expected for some VPNs, but it is not "
+                        "the same as residential ISP traffic."
                     ),
                 )
             )
@@ -125,10 +162,42 @@ class AuditEngine:
                     severity=Severity.INFO,
                     details=(
                         "KOAF can see a public IPv4 address but no VPN interface inside "
-                        "Kali. If you use a VPN on the host, this is expected. Future "
-                        "versions will classify the external provider more deeply."
+                        "Kali. If you use a VPN on the host, this is expected."
                     ),
                 )
             )
 
         return alerts
+
+    def score(self, findings: list[Finding], alerts: list[Finding]) -> list[Finding]:
+        combined = findings + alerts
+        counts = Counter(item.severity for item in combined)
+
+        if counts[Severity.HIGH] > 0:
+            status = "High exposure indicators present"
+            severity = Severity.HIGH
+        elif counts[Severity.MEDIUM] >= 4:
+            status = "Moderate exposure indicators present"
+            severity = Severity.MEDIUM
+        elif counts[Severity.MEDIUM] > 0:
+            status = "Some exposure indicators present"
+            severity = Severity.MEDIUM
+        else:
+            status = "Low exposure indicators observed"
+            severity = Severity.LOW
+
+        details = (
+            "This summary is a simple severity-based overview, not a mathematical anonymity "
+            f"score. Counts: HIGH={counts[Severity.HIGH]}, MEDIUM={counts[Severity.MEDIUM]}, "
+            f"LOW={counts[Severity.LOW]}, INFO={counts[Severity.INFO]}."
+        )
+
+        return [
+            Finding(
+                category="Summary",
+                title="Overall privacy surface",
+                status=status,
+                severity=severity,
+                details=details,
+            )
+        ]
