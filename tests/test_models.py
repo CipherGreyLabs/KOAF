@@ -19,3 +19,20 @@ def test_finding_to_dict_serializes_severity_value():
         "details": "Only link-local IPv6 addresses were detected.",
         "evidence": "fe80::1",
     }
+
+
+def test_sensitive_finding_can_be_redacted():
+    finding = Finding(
+        category="External",
+        title="Public IPv4",
+        status="203.0.113.10",
+        severity=Severity.INFO,
+        details="Public IPv4 visible externally.",
+        evidence="route evidence",
+        sensitive=True,
+    )
+
+    redacted = finding.to_dict(redact=True)
+
+    assert redacted["status"] == "REDACTED"
+    assert redacted["evidence"] == "REDACTED"
