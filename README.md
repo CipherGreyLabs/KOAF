@@ -30,10 +30,9 @@ KOAF v0.1.0 performs read only checks for:
 * Default route inspection
 * DNS resolver configuration
 * Local DNS stub resolver detection
-* External public IPv4 visibility
-* External provider classification using public IP registration data
-* Public IPv6 visibility check
-* Optional external IP lookup skipping with `--no-external`
+* Optional external public IPv4 visibility with `--external`
+* Optional external provider classification with `--external`
+* Optional public IPv6 visibility check with `--external`
 * Privacy safe output redaction with `--redact`
 * Hostname entropy
 * Linux machine ID presence
@@ -78,10 +77,10 @@ KOAF does not:
 * Spoof identifiers
 * Claim to guarantee anonymity
 
-By default, KOAF contacts external lookup services to show public IPv4, public IPv6 availability, and basic provider classification. If you do not want KOAF to contact external lookup services, use:
+By default, KOAF stays local and does not contact external lookup services. To check public IPv4, public IPv6 availability, and basic provider classification, explicitly use:
 
 ```bash
-koaf --audit --no-external
+koaf --audit --external
 ```
 
 If you want to share output safely, use redaction:
@@ -89,6 +88,7 @@ If you want to share output safely, use redaction:
 ```bash
 koaf --audit --redact
 koaf --audit --json --redact
+koaf --audit --external --json --redact
 ```
 
 Future hardening features should be controlled, explainable, and reversible.
@@ -123,7 +123,7 @@ pip install -e .[dev]
 
 ## Usage
 
-Run the standard audit:
+Run the standard local-only audit:
 
 ```bash
 python3 -m koaf --audit
@@ -135,13 +135,19 @@ Or, after editable install:
 koaf --audit
 ```
 
+Run audit with external lookup checks:
+
+```bash
+koaf --audit --external
+```
+
 For beginner friendly explanations of each finding, add `--explain`:
 
 ```bash
 koaf --audit --explain
 ```
 
-To skip external lookup services:
+To explicitly keep external lookup services disabled:
 
 ```bash
 koaf --audit --no-external
@@ -162,7 +168,7 @@ koaf --audit --json
 You can combine options:
 
 ```bash
-koaf --audit --no-external --json --redact
+koaf --audit --external --json --redact
 ```
 
 ## Example output
@@ -173,10 +179,17 @@ KOAF displays findings in tables, grouped by category:
 Network   Local VPN interface inside Kali     Not detected inside Kali      MEDIUM
 Network   IPv6 exposure                       Only link-local IPv6 present  LOW
 DNS       Configured resolvers                127.0.0.53                    LOW
-External  Public IPv4                         Detected                      INFO
-External  External provider classification    Residential ISP-like provider INFO
+External  Public IPv4                         Skipped by user               INFO
 Browser   Firefox WebRTC exposure             Configured securely           LOW
 Summary   Overall privacy surface             Some exposure indicators      MEDIUM
+```
+
+When `--external` is used, additional external findings may appear:
+
+```text
+External  Public IPv4                         198.51.100.10                 INFO
+External  External provider classification    Residential ISP-like provider INFO
+External  Public IPv6                         Not detected or unavailable   LOW
 ```
 
 It also shows correlation alerts when a finding needs interpretation, for example:
@@ -184,7 +197,7 @@ It also shows correlation alerts when a finding needs interpretation, for exampl
 ```text
 No guest-side VPN interface detected
 DNS stub resolver requires interpretation
-External IP available without guest VPN interface
+External route check skipped
 Public IPv6 visible externally
 ```
 
