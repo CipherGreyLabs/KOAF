@@ -21,6 +21,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--audit", action="store_true", help="Run read-only audit mode.")
     parser.add_argument(
+        "--external",
+        action="store_true",
+        help="Enable external IP, IPv6, and provider lookup checks.",
+    )
+    parser.add_argument(
+        "--no-external",
+        action="store_true",
+        help="Keep external lookup checks disabled. This is the default behavior.",
+    )
+    parser.add_argument(
         "--explain",
         action="store_true",
         help="Show beginner-friendly explanations for each finding.",
@@ -34,11 +44,6 @@ def parse_args() -> argparse.Namespace:
         "--redact",
         action="store_true",
         help="Redact sensitive values such as public IPs, routes, hostnames, and profile names.",
-    )
-    parser.add_argument(
-        "--no-external",
-        action="store_true",
-        help="Skip external IP lookup to avoid contacting a third-party IP service.",
     )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging.")
     return parser.parse_args()
@@ -122,8 +127,10 @@ def main() -> int:
         console.print(f"[bold cyan]KOAF[/bold cyan] v{__version__}")
         console.print("[italic]Kali OPSEC Automation Framework - read-only audit mode[/italic]\n")
 
+    external_enabled = args.external and not args.no_external
+
     logger.info("Mode selected: AUDIT")
-    engine = AuditEngine(logger, external_enabled=not args.no_external)
+    engine = AuditEngine(logger, external_enabled=external_enabled)
     findings, alerts = engine.run()
 
     if args.json:
