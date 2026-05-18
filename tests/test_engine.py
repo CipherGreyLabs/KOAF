@@ -22,3 +22,22 @@ def test_correlation_warns_when_external_check_is_skipped():
     alerts = engine.correlate(findings)
 
     assert any(alert.title == "External route check skipped" for alert in alerts)
+
+
+def test_score_reports_medium_when_medium_findings_exist():
+    engine = AuditEngine(DummyLogger())
+    findings = [
+        Finding(
+            category="Browser",
+            title="Firefox WebRTC exposure",
+            status="Not explicitly set",
+            severity=Severity.MEDIUM,
+            details="Expected media.peerconnection.enabled = false.",
+        )
+    ]
+
+    summary = engine.score(findings, [])
+
+    assert len(summary) == 1
+    assert summary[0].title == "Overall privacy surface"
+    assert summary[0].severity == Severity.MEDIUM
