@@ -1,4 +1,4 @@
-from koaf.checks import _extract_ipv6_addresses, check_external
+from koaf.checks import _classify_provider, _extract_ipv6_addresses, check_external
 
 
 def test_extract_ipv6_addresses_splits_link_local_and_global():
@@ -20,3 +20,10 @@ def test_external_check_can_be_skipped():
     assert len(findings) == 1
     assert findings[0].title == "Public IPv4"
     assert findings[0].status == "Skipped by user"
+
+
+def test_provider_classifier_identifies_common_provider_types():
+    assert _classify_provider("AS6848 Telenet BVBA") == "Residential ISP-like provider"
+    assert _classify_provider("AS9009 M247 Europe SRL") == "Datacenter or hosting-like provider"
+    assert _classify_provider("NordVPN service") == "VPN-like provider"
+    assert _classify_provider("Unknown Example Org") == "Unknown provider type"
