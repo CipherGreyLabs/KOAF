@@ -1,7 +1,5 @@
 # KOAF
 
-[![CI](https://github.com/CipherGreyLabs/KOAF/actions/workflows/ci.yml/badge.svg)](https://github.com/CipherGreyLabs/KOAF/actions/workflows/ci.yml)
-
 **Kali OPSEC Automation Framework**
 
 KOAF is a beginner friendly Kali Linux privacy and OPSEC audit tool. It helps new Linux and Kali users understand what their system may expose online, such as VPN visibility, DNS settings, IPv6 exposure, hostname identity, public IP routing, and Firefox privacy settings.
