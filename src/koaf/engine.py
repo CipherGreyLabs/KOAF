@@ -50,7 +50,10 @@ class AuditEngine:
         ipv6 = next((f for f in findings if f.title == "IPv6 exposure"), None)
         external = next((f for f in findings if f.title == "Public IPv4"), None)
         public_ipv6 = next((f for f in findings if f.title == "Public IPv6"), None)
-        provider = next((f for f in findings if f.title == "External provider classification"), None)
+        provider = next(
+            (f for f in findings if f.title == "External provider classification"),
+            None,
+        )
         dns_stub = next((f for f in findings if f.title == "Local DNS stub resolver"), None)
 
         if vpn and vpn.status == "Not detected inside Kali":
