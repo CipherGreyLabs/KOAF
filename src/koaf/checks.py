@@ -285,7 +285,10 @@ def check_external(enabled: bool = True) -> list[Finding]:
                 title="Public IPv4",
                 status="Unable to retrieve",
                 severity=Severity.MEDIUM,
-                details="External IPv4 lookup failed. This may be due to no internet or HTTPS blocking.",
+                details=(
+                    "External IPv4 lookup failed. This may be due to no internet or "
+                    "HTTPS blocking."
+                ),
                 evidence=str(exc),
             )
         )
