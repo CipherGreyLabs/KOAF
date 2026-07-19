@@ -1,4 +1,15 @@
 from koaf.checks import _classify_provider, _extract_ipv6_addresses, check_external
+from koaf.checks.dns import check_dns
+from koaf.checks.firefox import check_firefox
+from koaf.checks.host import check_host
+from koaf.checks.network import check_network
+
+
+def test_checks_package_preserves_public_imports():
+    assert all(
+        callable(check)
+        for check in (check_network, check_dns, check_external, check_host, check_firefox)
+    )
 
 
 def test_extract_ipv6_addresses_splits_link_local_and_global():
