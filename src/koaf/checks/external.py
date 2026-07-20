@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import ipaddress
 import json
+from http.client import HTTPResponse
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 from koaf.models import Finding, Severity
+
+_ALLOWED_EXTERNAL_HOSTS = frozenset({"api.ipify.org", "api6.ipify.org", "ipinfo.io"})
+_MAX_RESPONSE_BYTES = 64 * 1024
 
 
 def _classify_provider(org: str) -> str:
@@ -57,16 +62,39 @@ def _classify_provider(org: str) -> str:
     return "Unknown provider type"
 
 
+def _validated_request(url: str) -> Request:
+    parsed = urlsplit(url)
+    if parsed.scheme != "https" or parsed.hostname not in _ALLOWED_EXTERNAL_HOSTS:
+        raise ValueError("External lookup URL is not permitted")
+    if parsed.username or parsed.password or parsed.port not in {None, 443}:
+        raise ValueError("External lookup URL contains unsupported authority data")
+    return Request(url, headers={"User-Agent": "KOAF/0.1.0"})
+
+
+def _read_limited(response: HTTPResponse) -> bytes:
+    # urllib may follow redirects, so validate the final destination as well.
+    _validated_request(response.geturl())
+    payload = response.read(_MAX_RESPONSE_BYTES + 1)
+    if len(payload) > _MAX_RESPONSE_BYTES:
+        raise ValueError("External lookup response exceeded the size limit")
+    return payload
+
+
 def _http_json(url: str, timeout: int = 5) -> dict:
-    request = Request(url, headers={"User-Agent": "KOAF/0.1.0"})
-    with urlopen(request, timeout=timeout) as response:
-        return json.loads(response.read().decode())
+    request = _validated_request(url)
+    # URL scheme and hostname are constrained by _validated_request.
+    with urlopen(request, timeout=timeout) as response:  # nosec B310
+        content_type = response.headers.get_content_type()
+        if content_type != "application/json":
+            raise ValueError("External lookup returned an unexpected content type")
+        return json.loads(_read_limited(response).decode())
 
 
 def _http_text(url: str, timeout: int = 5) -> str:
-    request = Request(url, headers={"User-Agent": "KOAF/0.1.0"})
-    with urlopen(request, timeout=timeout) as response:
-        return response.read().decode().strip()
+    request = _validated_request(url)
+    # URL scheme and hostname are constrained by _validated_request.
+    with urlopen(request, timeout=timeout) as response:  # nosec B310
+        return _read_limited(response).decode().strip()
 
 
 def check_external(enabled: bool = True) -> list[Finding]:
@@ -133,6 +161,7 @@ def check_external(enabled: bool = True) -> list[Finding]:
                     "This is a heuristic, not proof of VPN or ISP usage."
                 ),
                 evidence=org,
+                sensitive_evidence=True,
             )
         )
     except Exception as exc:
@@ -144,6 +173,7 @@ def check_external(enabled: bool = True) -> list[Finding]:
                 severity=Severity.INFO,
                 details="Provider classification failed. Public IPv4 detection still completed.",
                 evidence=str(exc),
+                sensitive_evidence=True,
             )
         )
 

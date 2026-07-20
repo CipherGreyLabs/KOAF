@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import subprocess
+import subprocess  # nosec B404
 from dataclasses import dataclass
 
 
@@ -13,7 +13,8 @@ class CmdResult:
 
 def run_cmd(argv: list[str], timeout: int = 3) -> CmdResult:
     try:
-        result = subprocess.run(
+        # Callers pass fixed argument lists; shell expansion is intentionally disabled.
+        result = subprocess.run(  # nosec B603
             argv,
             text=True,
             capture_output=True,

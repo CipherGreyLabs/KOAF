@@ -36,3 +36,20 @@ def test_sensitive_finding_can_be_redacted():
 
     assert redacted["status"] == "REDACTED"
     assert redacted["evidence"] == "REDACTED"
+
+
+def test_sensitive_evidence_can_be_redacted_without_hiding_status():
+    finding = Finding(
+        category="External",
+        title="External provider classification",
+        status="Residential ISP-like provider",
+        severity=Severity.INFO,
+        details="Heuristic provider classification.",
+        evidence="AS64500 Example ISP",
+        sensitive_evidence=True,
+    )
+
+    redacted = finding.to_dict(redact=True)
+
+    assert redacted["status"] == "Residential ISP-like provider"
+    assert redacted["evidence"] == "REDACTED"

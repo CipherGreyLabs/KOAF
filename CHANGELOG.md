@@ -2,6 +2,18 @@
 
 All notable changes to KOAF will be documented in this file.
 
+## Unreleased
+
+### Security
+
+- Redact exact external provider and ASN evidence from shareable reports
+- Redact unexpected check failures that may contain local paths
+- Restrict external lookups to an explicit HTTPS host allowlist
+- Limit external response sizes and validate JSON response types
+- Reject symbolic-link log targets and tighten POSIX log permissions
+- Add automated dependency auditing and static security analysis to CI
+- Pin GitHub Actions to immutable commit SHAs
+
 ## v0.1.0
 
 Initial audit-first foundation.

@@ -1,4 +1,5 @@
 from koaf.checks import _classify_provider, _extract_ipv6_addresses, check_external
+from koaf.checks import external as external_checks
 from koaf.checks.dns import check_dns
 from koaf.checks.firefox import check_firefox
 from koaf.checks.host import check_host
@@ -38,3 +39,38 @@ def test_provider_classifier_identifies_common_provider_types():
     assert _classify_provider("AS9009 M247 Europe SRL") == "Datacenter or hosting-like provider"
     assert _classify_provider("NordVPN service") == "VPN-like provider"
     assert _classify_provider("Unknown Example Org") == "Unknown provider type"
+
+
+def test_external_lookup_rejects_non_https_and_unknown_hosts():
+    for url in ("http://api.ipify.org", "https://example.com/ip", "file:///etc/passwd"):
+        try:
+            external_checks._validated_request(url)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Expected external URL to be rejected: {url}")
+
+    request = external_checks._validated_request("https://api.ipify.org")
+    assert request.full_url == "https://api.ipify.org"
+
+
+def test_provider_evidence_is_redacted(monkeypatch):
+    def fake_text(url: str, timeout: int = 5) -> str:
+        return "2001:db8::1" if "api6" in url else "203.0.113.10"
+
+    monkeypatch.setattr(external_checks, "_http_text", fake_text)
+    monkeypatch.setattr(
+        external_checks,
+        "_http_json",
+        lambda _url, timeout=5: {"org": "AS64500 Example Residential ISP"},
+    )
+
+    provider = next(
+        finding
+        for finding in check_external(enabled=True)
+        if finding.title == "External provider classification"
+    )
+
+    redacted = provider.to_dict(redact=True)
+    assert redacted["status"] == "Unknown provider type"
+    assert redacted["evidence"] == "REDACTED"
