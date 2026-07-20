@@ -81,6 +81,8 @@ By default, KOAF stays local and does not contact external lookup services. To c
 koaf --audit --external
 ```
 
+External mode contacts `api.ipify.org`, `api6.ipify.org`, and `ipinfo.io`. KOAF only permits HTTPS requests to these hosts, limits response sizes, and does not send local audit reports.
+
 If you want to share output safely, use redaction:
 
 ```bash
@@ -88,6 +90,8 @@ koaf --audit --redact
 koaf --audit --json --redact
 koaf --audit --external --json --redact
 ```
+
+Redaction hides public IPs, routes, hostnames, profile identifiers, machine identifiers, exact provider/ASN evidence, and sensitive failure details.
 
 Future hardening features should be controlled, explainable, and reversible.
 

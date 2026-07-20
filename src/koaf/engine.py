@@ -36,6 +36,7 @@ class AuditEngine:
                         status=str(exc),
                         severity=Severity.HIGH,
                         details="The check failed but the audit continued safely.",
+                        sensitive=True,
                     )
                 )
 

@@ -21,15 +21,20 @@ class Finding:
     details: str
     evidence: str = ""
     sensitive: bool = False
+    sensitive_evidence: bool = False
 
     def redacted(self) -> Finding:
-        if not self.sensitive:
+        if not self.sensitive and not self.sensitive_evidence:
             return self
 
         return replace(
             self,
-            status="REDACTED",
-            evidence="REDACTED" if self.evidence else "",
+            status="REDACTED" if self.sensitive else self.status,
+            evidence=(
+                "REDACTED"
+                if self.evidence and (self.sensitive or self.sensitive_evidence)
+                else self.evidence
+            ),
         )
 
     def to_dict(self, redact: bool = False) -> dict[str, Any]:
