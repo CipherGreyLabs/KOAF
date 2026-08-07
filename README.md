@@ -219,3 +219,59 @@ Example JSON shape:
   "correlation_alerts": []
 }
 ```
+
+## Development checks
+
+Run syntax checks:
+
+```bash
+python -m compileall src/koaf
+```
+
+Run linting:
+
+```bash
+ruff check .
+```
+
+Run tests:
+
+```bash
+python -m pytest
+```
+
+## Important limitations
+
+KOAF does not prove that you are anonymous.
+
+Current limitations:
+
+* External provider classification is heuristic and may be wrong
+* DNS leak testing is not fully implemented yet
+* Browser fingerprinting is limited to selected Firefox preferences
+* Host VPN detection is inferred indirectly and not proven from inside Kali
+* Hardening mode is not implemented yet
+
+## Roadmap
+
+Planned improvements:
+
+* Better DNS upstream detection
+* DNS versus external route correlation
+* More beginner friendly explanations
+* Optional controlled hardening with rollback support
+* Stronger test coverage around CLI behavior
+
+## Project status
+
+Current version: **v0.1.1**
+
+KOAF is currently an audit first foundation. The focus is visibility, explanation, and safe learning before adding automatic hardening.
+
+## License
+
+KOAF is released under the MIT License.
+
+## Ethical use
+
+KOAF is intended for personal learning, privacy awareness, lab use, and defensive OPSEC education. Use it only on systems you own or are authorized to assess.
