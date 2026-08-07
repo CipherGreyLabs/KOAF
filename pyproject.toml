@@ -4,12 +4,34 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "koaf"
-version = "0.1.0"
-description = "Kali OPSEC Automation Framework: identity surface and anonymity audit tool"
+version = "0.1.1"
+description = "Kali OPSEC Automation Framework: privacy and exposure surface audit tool"
+readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "CipherGreyLabs"}
+]
+keywords = ["kali", "linux", "privacy", "opsec", "audit", "security"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+]
 dependencies = [
     "rich>=13.0.0,<16"
 ]
+
+[project.urls]
+Repository = "https://github.com/CipherGreyLabs/KOAF"
+Issues = "https://github.com/CipherGreyLabs/KOAF/issues"
 
 [project.optional-dependencies]
 dev = [
