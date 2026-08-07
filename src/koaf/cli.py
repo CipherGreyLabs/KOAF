@@ -17,19 +17,25 @@ from koaf.models import Finding, Severity
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="koaf",
-        description="KOAF: Kali OPSEC anonymity surface audit tool.",
+        description="KOAF: Kali OPSEC privacy and exposure surface audit tool.",
     )
     parser.add_argument("--audit", action="store_true", help="Run read-only audit mode.")
-    parser.add_argument(
+
+    external_group = parser.add_mutually_exclusive_group()
+    external_group.add_argument(
         "--external",
         action="store_true",
         help="Enable external IP, IPv6, and provider lookup checks.",
     )
-    parser.add_argument(
+    external_group.add_argument(
         "--no-external",
         action="store_true",
-        help="Keep external lookup checks disabled. This is the default behavior.",
+        help=(
+            "Explicitly keep external lookup checks disabled. This is already the default; "
+            "the flag is retained for backwards compatibility."
+        ),
     )
+
     parser.add_argument(
         "--explain",
         action="store_true",
@@ -127,7 +133,7 @@ def main() -> int:
         console.print(f"[bold cyan]KOAF[/bold cyan] v{__version__}")
         console.print("[italic]Kali OPSEC Automation Framework - read-only audit mode[/italic]\n")
 
-    external_enabled = args.external and not args.no_external
+    external_enabled = args.external
 
     logger.info("Mode selected: AUDIT")
     engine = AuditEngine(logger, external_enabled=external_enabled)
