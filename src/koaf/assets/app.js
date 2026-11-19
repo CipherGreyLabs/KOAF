@@ -42,7 +42,6 @@ function renderOverview() {
   setText("mediumCount", counts.MEDIUM);
   setText("lowCount", counts.LOW);
   setText("infoCount", counts.INFO);
-  setText("totalNavCount", findings.length);
   setText("scopeLabel", report.external_enabled ? "EXTERNAL LOOKUPS ENABLED" : "LOCAL-FIRST CHECK");
   setText("externalBadge", report.external_enabled
     ? "External lookups explicitly enabled"
