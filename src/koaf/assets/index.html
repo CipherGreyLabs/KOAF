@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="no-referrer">
+  <title>KOAF / Privacy posture</title>
+  <link rel="stylesheet" href="assets/app.css">
+  <script src="assets/app.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span>◇</span></div>
+        <div><strong>KOAF</strong><small>OPSEC / AUDIT</small></div>
+      </div>
+      <div class="side-label">WORKSPACE</div>
+      <nav aria-label="Finding categories" id="categoryNav">
+        <button class="nav-link active" type="button" data-category="All"><span class="nav-symbol">▦</span> Overview <span class="nav-count" id="totalNavCount">–</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="side-line"><span class="status-dot"></span> Local session</div>
+        <p>Runs on your machine. No cloud dashboard, analytics, or background uploads.</p>
+        <div class="side-version" id="versionLabel">KOAF / loading</div>
+      </div>
+    </aside>
+
+    <main class="main" id="main">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>Workspace</span><span class="crumb-separator">/</span><strong>System overview</strong></div>
+        <div class="top-actions">
+          <span class="live-chip"><span class="status-dot"></span> LOCAL SESSION</span>
+          <button type="button" class="button ghost" id="revealButton" aria-pressed="false">◉ <span id="revealLabel">Reveal values</span></button>
+          <button type="button" class="button primary" id="exportButton">↓ Export JSON</button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <section class="heading">
+          <div>
+            <div class="eyebrow">KALI OPSEC AUTOMATION FRAMEWORK <span class="eyebrow-line"></span> AUDIT REPORT</div>
+            <h1>Privacy posture <span class="heading-accent">overview.</span></h1>
+            <p>Understand your system's exposed surfaces, review findings, and inspect recommended next steps.</p>
+          </div>
+        </section>
+
+        <section class="hero" aria-label="Audit overview">
+          <div class="hero-glow"></div>
+          <div class="hero-body">
+            <div class="hero-label"><span class="status-dot"></span> ASSESSMENT COMPLETE</div>
+            <h2 id="heroTitle">Preparing your audit…</h2>
+            <p id="heroDescription">Loading findings from the local KOAF engine.</p>
+            <div class="hero-foot">
+              <span id="scopeLabel">LOCAL-FIRST CHECK</span>
+              <span class="dot-sep">•</span>
+              <span>Read-only assessment</span>
+              <span class="dot-sep">•</span>
+              <span id="privacyState">Sensitive values hidden</span>
+            </div>
+          </div>
+          <div class="hero-graphic" aria-hidden="true">
+            <div class="radar ring-outer"><div class="radar ring-middle"><div class="radar ring-inner">◇</div></div></div>
+          </div>
+        </section>
+
+        <section class="metrics" aria-label="Findings by severity">
+          <article class="metric metric-high"><div class="metric-top"><span>HIGH PRIORITY</span><span class="metric-symbol">↗</span></div><strong id="highCount">–</strong><small>Findings requiring attention</small></article>
+          <article class="metric metric-medium"><div class="metric-top"><span>MEDIUM PRIORITY</span><span class="metric-symbol">↗</span></div><strong id="mediumCount">–</strong><small>Potential exposure indicators</small></article>
+          <article class="metric metric-low"><div class="metric-top"><span>LOW PRIORITY</span><span class="metric-symbol">↗</span></div><strong id="lowCount">–</strong><small>Minor observations</small></article>
+          <article class="metric metric-info"><div class="metric-top"><span>INFORMATIONAL</span><span class="metric-symbol">↗</span></div><strong id="infoCount">–</strong><small>Context and configuration</small></article>
+        </section>
+
+        <div class="content-grid">
+          <section class="panel findings-panel">
+            <div class="panel-head">
+              <div><div class="eyebrow">AUDIT DETAILS</div><h2>Findings <span id="findingCount" class="muted-count"></span></h2></div>
+              <div class="controls"><label class="sr-only" for="searchInput">Search findings</label><input type="search" id="searchInput" placeholder="Search findings…" autocomplete="off"></div>
+            </div>
+            <div class="filters" role="group" aria-label="Filter severity">
+              <button type="button" class="filter active" data-filter="ALL">All</button>
+              <button type="button" class="filter" data-filter="HIGH">High</button>
+              <button type="button" class="filter" data-filter="MEDIUM">Medium</button>
+              <button type="button" class="filter" data-filter="LOW">Low</button>
+              <button type="button" class="filter" data-filter="INFO">Info</button>
+            </div>
+            <div id="findingsList" class="findings-list" aria-live="polite">
+              <p class="empty-state">Loading system findings…</p>
+            </div>
+          </section>
+
+          <aside class="right-column">
+            <section class="panel panel-compact">
+              <div class="eyebrow">SEVERITY DISTRIBUTION</div>
+              <h2>Risk signals</h2>
+              <p class="helper-text">Counts of individual findings, not an anonymity score.</p>
+              <div class="bars" id="severityBars"></div>
+            </section>
+
+            <section class="panel panel-compact">
+              <div class="eyebrow">CONTEXT</div>
+              <h2>Correlation alerts <span id="alertCount" class="muted-count"></span></h2>
+              <div id="alertList" class="alerts"><p class="helper-text">Loading interpretation notes…</p></div>
+            </section>
+
+            <section class="privacy-card">
+              <div class="privacy-icon" aria-hidden="true">✧</div>
+              <strong>Privacy by design.</strong>
+              <p>Reports stay in memory. External lookups only run if you started KOAF with <code>--external</code>.</p>
+              <div class="privacy-bottom"><span class="status-dot"></span><span id="externalBadge">External checks disabled</span></div>
+            </section>
+          </aside>
+        </div>
+
+        <footer class="footer">
+          <span>KOAF <span class="dot-sep">/</span> Kali OPSEC Automation Framework</span>
+          <span>Findings are indicators, not proof of anonymity or a security certification.</span>
+        </footer>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
