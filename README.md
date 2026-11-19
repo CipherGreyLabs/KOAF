@@ -291,8 +291,10 @@ Planned improvements:
 * Better DNS upstream detection
 * DNS versus external route correlation
 * More beginner friendly explanations
-* Optional controlled hardening with rollback support
+* Clear, human-reviewed remediation guidance without automatic system changes
 * Stronger test coverage around CLI behavior
+
+For the detailed architecture, threat-model review, known limitations, and release checklist, see [Security & Architecture Review](docs/SECURITY_ARCHITECTURE_REVIEW.md).
 
 ## Project status
 
