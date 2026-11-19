@@ -20,7 +20,7 @@ def test_logger_uses_private_posix_permissions(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     try:
-        setup_logger(enable_console=False)
+        setup_logger(enable_console=False, enable_file=True)
 
         assert stat.S_IMODE((tmp_path / "logs").stat().st_mode) == 0o700
         assert stat.S_IMODE((tmp_path / "logs" / "koaf.log").stat().st_mode) == 0o600
@@ -38,6 +38,16 @@ def test_logger_rejects_symbolic_link_directory(tmp_path, monkeypatch):
 
     try:
         with pytest.raises(RuntimeError, match="symbolic links"):
-            setup_logger(enable_console=False)
+            setup_logger(enable_console=False, enable_file=True)
+    finally:
+        _reset_koaf_logger()
+
+
+def test_logger_does_not_create_files_by_default(tmp_path, monkeypatch):
+    _reset_koaf_logger()
+    monkeypatch.chdir(tmp_path)
+    try:
+        setup_logger(enable_console=False)
+        assert not (tmp_path / "logs").exists()
     finally:
         _reset_koaf_logger()
