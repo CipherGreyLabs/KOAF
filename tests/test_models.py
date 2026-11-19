@@ -1,4 +1,4 @@
-from koaf.models import Finding, Severity
+from koaf.models import CheckOutcome, Finding, Severity
 
 
 def test_finding_to_dict_serializes_severity_value():
@@ -16,6 +16,7 @@ def test_finding_to_dict_serializes_severity_value():
         "title": "IPv6 exposure",
         "status": "Only link-local IPv6 present",
         "severity": "LOW",
+        "outcome": "INFO",
         "details": "Only link-local IPv6 addresses were detected.",
         "evidence": "fe80::1",
     }
@@ -53,3 +54,21 @@ def test_sensitive_evidence_can_be_redacted_without_hiding_status():
 
     assert redacted["status"] == "Residential ISP-like provider"
     assert redacted["evidence"] == "REDACTED"
+
+
+def test_outcome_is_preserved_after_sensitive_redaction():
+    finding = Finding(
+        category="Network",
+        title="Private route",
+        status="via 10.0.0.1 dev tun0",
+        severity=Severity.MEDIUM,
+        details="Review tunnel route.",
+        sensitive=True,
+        outcome=CheckOutcome.REVIEW,
+    )
+
+    serialized = finding.to_dict(redact=True)
+
+    assert serialized["status"] == "REDACTED"
+    assert serialized["outcome"] == "REVIEW"
+    assert "10.0.0.1" not in str(serialized)
