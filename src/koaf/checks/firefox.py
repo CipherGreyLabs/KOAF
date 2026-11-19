@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from koaf.models import Finding, Severity
+from koaf.models import CheckOutcome, Finding, Severity
 
 _PREF_LINE = re.compile(
     r'^\s*user_pref\(\s*"([^"]+)"\s*,\s*([^)]*?)\s*\)\s*;',
@@ -28,6 +28,7 @@ def check_firefox() -> list[Finding]:
                 title="Firefox profile",
                 status="No Firefox profile directory found",
                 severity=Severity.INFO,
+                outcome=CheckOutcome.UNKNOWN,
                 details="Firefox may not be installed or has not been launched yet.",
             )
         ]
@@ -39,7 +40,8 @@ def check_firefox() -> list[Finding]:
                 category="Browser",
                 title="Firefox profile",
                 status="Profile directory found, but no prefs.js found",
-                severity=Severity.MEDIUM,
+                severity=Severity.INFO,
+                outcome=CheckOutcome.UNKNOWN,
                 details="Firefox profile appears incomplete or not initialized.",
             )
         ]
@@ -58,6 +60,7 @@ def check_firefox() -> list[Finding]:
             title="Firefox profile",
             status=profile.name,
             severity=Severity.INFO,
+            outcome=CheckOutcome.INFO,
             details="Firefox profile selected for privacy preference audit.",
             sensitive=True,
         )
@@ -118,13 +121,16 @@ def check_firefox() -> list[Finding]:
         configured = prefs.get(key)
         if configured is None:
             status = "Not explicitly set"
-            severity = Severity.MEDIUM
+            severity = Severity.INFO
+            outcome = CheckOutcome.UNKNOWN
         elif configured == expected:
             status = "Configured as recommended"
             severity = Severity.LOW
+            outcome = CheckOutcome.PASS
         else:
             status = "Present with different value"
-            severity = Severity.HIGH
+            severity = Severity.MEDIUM
+            outcome = CheckOutcome.REVIEW
 
         findings.append(
             Finding(
@@ -132,6 +138,7 @@ def check_firefox() -> list[Finding]:
                 title=title,
                 status=status,
                 severity=severity,
+                outcome=outcome,
                 details=details,
             )
         )
