@@ -214,10 +214,10 @@ def check_external(enabled: bool = False) -> list[Finding]:
                 status=ipv6,
                 severity=Severity.MEDIUM,
                 outcome=CheckOutcome.REVIEW,
-                    details=(
-                        "A public IPv6 address was visible externally. Compare this with IPv4 "
-                        "to detect split routing or IPv6 leak surfaces."
-                    ),
+                details=(
+                    "A public IPv6 address was visible externally. Compare this with IPv4 "
+                    "to detect split routing or IPv6 leak surfaces."
+                ),
                 sensitive=True,
             )
         )
