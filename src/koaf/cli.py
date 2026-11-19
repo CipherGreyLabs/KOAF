@@ -20,6 +20,9 @@ def parse_args() -> argparse.Namespace:
         description="KOAF: Kali OPSEC privacy and exposure surface audit tool.",
     )
     parser.add_argument("--audit", action="store_true", help="Run read-only audit mode.")
+    parser.add_argument(
+        "--gui", action="store_true", help="Open the local, private interactive audit dashboard."
+    )
 
     external_group = parser.add_mutually_exclusive_group()
     external_group.add_argument(
@@ -126,15 +129,21 @@ def render_json(findings: list[Finding], alerts: list[Finding], redact: bool) ->
 def main() -> int:
     args = parse_args()
     console = Console(stderr=args.json)
-    logger = setup_logger(
-        verbose=args.verbose, enable_console=not args.json, enable_file=args.log_file
-    )
-
-    if not args.audit:
-        console.print("[red]No mode selected.[/red] Use: koaf --audit")
+    if args.gui and args.json:
+        console.print("[red]--gui and --json cannot be combined.[/red]")
         return 2
 
-    if not args.json:
+    if not args.audit and not args.gui:
+        console.print("[red]No mode selected.[/red] Use: koaf --audit or koaf --gui")
+        return 2
+
+    logger = setup_logger(
+        verbose=args.verbose,
+        enable_console=not (args.json or args.gui),
+        enable_file=args.log_file,
+    )
+
+    if not args.json and not args.gui:
         console.print(f"[bold cyan]KOAF[/bold cyan] v{__version__}")
         console.print("[italic]Kali OPSEC Automation Framework - read-only audit mode[/italic]\n")
 
@@ -143,6 +152,16 @@ def main() -> int:
     logger.info("Mode selected: AUDIT")
     engine = AuditEngine(logger, external_enabled=external_enabled)
     findings, alerts = engine.run()
+
+    if args.gui:
+        from koaf.gui import launch_dashboard
+
+        launch_dashboard(
+            findings, alerts,
+            external_enabled=external_enabled,
+            redaction_locked=args.redact,
+        )
+        return 0
 
     if args.json:
         render_json(findings, alerts, redact=args.redact)
