@@ -5,7 +5,6 @@ from pathlib import Path
 
 from koaf.models import Finding, Severity
 
-
 _PREF_LINE = re.compile(
     r'^\s*user_pref\(\s*"([^"]+)"\s*,\s*([^)]*?)\s*\)\s*;',
     re.MULTILINE,
