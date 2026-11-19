@@ -96,7 +96,7 @@ def main() -> None:
             assert desktop.locator("#lowCount").inner_text() == "2"
             assert desktop.locator("#infoCount").inner_text() == "1"
             assert desktop.locator("#findingCount").inner_text() == "(5)"
-            assert desktop.locator("#privacyState").inner_text() == "Sensitive values hidden"
+            expect(desktop.locator("#privacyState")).to_have_text("Sensitive values hidden")
             assert desktop.get_by_text("203.0.113.44").count() == 0
             desktop.screenshot(path=str(SCREENSHOTS / "koaf-desktop-1440.png"), full_page=True)
 
@@ -126,7 +126,7 @@ def main() -> None:
 
             desktop.locator("#revealButton").click()
             desktop.get_by_text("203.0.113.44", exact=True).wait_for()
-            assert desktop.locator("#privacyState").inner_text() == "Sensitive values revealed"
+            expect(desktop.locator("#privacyState")).to_have_text("Sensitive values revealed")
             desktop.locator("#revealButton").click()
             assert desktop.locator("#privacyState").inner_text() == "Sensitive values hidden"
 
