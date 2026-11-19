@@ -10,7 +10,7 @@ import json
 import threading
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 from koaf.gui import DashboardServer
 from koaf.models import Finding, Severity
@@ -88,7 +88,7 @@ def main() -> None:
                 else None,
             )
             desktop.goto(server.dashboard_url, wait_until="networkidle")
-            desktop.locator("#findingCount").get_by_text("(5)").wait_for()
+            expect(desktop.locator("#findingCount")).to_have_text("(5)")
 
             assert desktop.title() == "KOAF / Privacy posture"
             assert desktop.locator("#highCount").inner_text() == "1"
@@ -136,7 +136,7 @@ def main() -> None:
             )
             mobile.on("pageerror", lambda error: errors.append(str(error)))
             mobile.goto(server.dashboard_url, wait_until="networkidle")
-            mobile.locator("#findingCount").get_by_text("(5)").wait_for()
+            expect(mobile.locator("#findingCount")).to_have_text("(5)")
             assert mobile.locator(".finding").count() == 5
             dimensions = mobile.evaluate("""() => ({
                 viewport: window.innerWidth,
@@ -147,7 +147,7 @@ def main() -> None:
 
             locked = browser.new_page(viewport={"width": 1280, "height": 800})
             locked.goto(locked_server.dashboard_url, wait_until="networkidle")
-            locked.locator("#findingCount").get_by_text("(5)").wait_for()
+            expect(locked.locator("#findingCount")).to_have_text("(5)")
             assert locked.locator("#revealButton").is_disabled()
             assert locked.locator("#revealLabel").inner_text() == "Redaction locked"
             assert "203.0.113.44" not in locked.locator("body").inner_text()
