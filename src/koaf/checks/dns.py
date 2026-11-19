@@ -73,7 +73,7 @@ def check_dns() -> list[Finding]:
                 status="Detected" if resolved.returncode == 0 else "Detected, upstream unknown",
                 severity=Severity.INFO,
                 outcome=(
-                    CheckOutcome.INFO if resolved.returncode == 0
+                    CheckOutcome.INFO if resolved.returncode == 0 and resolved.stdout
                     else CheckOutcome.UNKNOWN
                 ),
                 details=details,
