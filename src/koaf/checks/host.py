@@ -3,7 +3,7 @@
 import socket
 from pathlib import Path
 
-from koaf.models import Finding, Severity
+from koaf.models import CheckOutcome, Finding, Severity
 
 
 def check_host() -> list[Finding]:
@@ -18,6 +18,7 @@ def check_host() -> list[Finding]:
             title="Hostname entropy",
             status=hostname,
             severity=Severity.LOW if unique_chars >= 6 else Severity.MEDIUM,
+            outcome=CheckOutcome.INFO if unique_chars >= 6 else CheckOutcome.REVIEW,
             details=(
                 f"Unique character count: {unique_chars}. Low entropy hostnames are easier "
                 "to correlate."
@@ -34,6 +35,7 @@ def check_host() -> list[Finding]:
                 title="Machine ID presence",
                 status="Present",
                 severity=Severity.INFO,
+                outcome=CheckOutcome.INFO,
                 details=(
                     "A Linux machine-id file exists. Its contents are not read or included "
                     "in audit reports."
@@ -47,6 +49,7 @@ def check_host() -> list[Finding]:
                 title="Machine ID presence",
                 status="Not found",
                 severity=Severity.LOW,
+                outcome=CheckOutcome.INFO,
                 details="No /etc/machine-id file was found.",
             )
         )
