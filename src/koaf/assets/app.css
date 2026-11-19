@@ -151,3 +151,22 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
 @media (max-width:920px) { .app{grid-template-columns:1fr;} .sidebar{height:auto;position:relative; padding:15px 20px; border-right:0;border-bottom:1px solid var(--line);} .brand{padding:0;} .side-label,.sidebar-bottom{display:none;} #categoryNav{display:flex;overflow:auto;gap:5px;margin-top:14px;} .nav-link{width:auto;white-space:nowrap;padding:10px 13px;} .nav-count{display:none;} .topbar{height:auto;min-height:70px;flex-wrap:wrap;padding:15px 24px;} .page-content{padding:28px 24px;} .hero-graphic{flex-basis:180px;} .ring-outer{width:150px;height:150px;} .ring-middle{width:115px;height:115px;} .ring-inner{width:75px;height:75px;font-size:43px;} }
 @media (max-width:670px) { .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;} .hero{padding:26px;min-height:180px;} .hero-graphic{display:none;} .page-content{padding:25px 16px;} .topbar{padding:14px 16px;} .live-chip{display:none;} .top-actions{width:100%;justify-content:space-between;} .button{padding:10px 11px;} .right-column{display:flex;} .panel-head{align-items:stretch;flex-direction:column;} .controls input{max-width:none;} .finding{padding:15px 17px;} .finding details{margin-left:0;} .footer{line-height:1.8;} }
 @media (prefers-reduced-motion: reduce) { *,*:before,*:after{transition:none!important;animation:none!important;} }
+
+/* Outcome states are separate from severity; neither color nor severity alone
+   is used to communicate an audit result. */
+.coverage-block {
+  border:1px solid #34554d; background:#132c2d; border-radius:10px;
+  padding:14px 16px; margin:17px 0 20px;
+}
+.coverage-number { font-size:26px; font-weight:760; letter-spacing:-.035em; margin-top:10px; color:#b1f6df; }
+.coverage-block .helper-text { margin-top:7px; }
+.tag-stack { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:0 0 auto; }
+.outcome-tag {
+  border:1px solid #39546b; color:#c6d9ed; background:#23374a;
+  border-radius:6px; padding:5px 7px; font-size:9px; font-weight:850; letter-spacing:.08em;
+}
+.outcome-pass { color:#9befd4; background:#23493d; border-color:#327662; }
+.outcome-review { color:#ffdfaa; background:#4c3c28; border-color:#745a39; }
+.outcome-fail { color:#ffa8b4; background:#542f39; border-color:#87485b; }
+.outcome-unknown { color:#c4c7d8; background:#34364a; border-color:#525670; }
+.outcome-info { color:#a8cafa; background:#263e60; border-color:#3c5c8c; }
