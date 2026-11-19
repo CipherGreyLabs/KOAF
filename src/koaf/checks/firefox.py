@@ -1,8 +1,20 @@
 """Firefox privacy preference checks."""
 
+import re
 from pathlib import Path
 
 from koaf.models import Finding, Severity
+
+
+_PREF_LINE = re.compile(
+    r'^\s*user_pref\(\s*"([^"]+)"\s*,\s*([^)]*?)\s*\)\s*;',
+    re.MULTILINE,
+)
+
+
+def _parse_prefs(text: str) -> dict[str, str]:
+    """Extract active user_pref assignments; later values override earlier ones."""
+    return {match.group(1): match.group(2).strip() for match in _PREF_LINE.finditer(text)}
 
 
 def check_firefox() -> list[Finding]:
@@ -37,7 +49,9 @@ def check_firefox() -> list[Finding]:
     prefs_text = (profile / "prefs.js").read_text(errors="ignore")
     user_js = profile / "user.js"
     user_text = user_js.read_text(errors="ignore") if user_js.exists() else ""
-    combined = prefs_text + "\n" + user_text
+    prefs = _parse_prefs(prefs_text)
+    # user.js is reapplied on Firefox startup and takes precedence for these settings.
+    prefs.update(_parse_prefs(user_text))
 
     findings.append(
         Finding(
@@ -102,16 +116,16 @@ def check_firefox() -> list[Finding]:
     ]
 
     for key, expected, title, details in checks:
-        exact = f'user_pref("{key}", {expected});'
-        if exact in combined:
-            status = "Configured securely"
-            severity = Severity.LOW
-        elif f'"{key}"' in combined:
-            status = "Present with different value"
-            severity = Severity.HIGH
-        else:
+        configured = prefs.get(key)
+        if configured is None:
             status = "Not explicitly set"
             severity = Severity.MEDIUM
+        elif configured == expected:
+            status = "Configured as recommended"
+            severity = Severity.LOW
+        else:
+            status = "Present with different value"
+            severity = Severity.HIGH
 
         findings.append(
             Finding(
