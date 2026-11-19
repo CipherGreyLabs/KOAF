@@ -127,6 +127,34 @@ For development and tests:
 pip install -e .[dev]
 ```
 
+## Local interactive dashboard
+
+Launch the privacy-focused, professional browser GUI on Kali/Linux:
+
+```bash
+koaf --gui
+```
+
+The dashboard runs **only on `127.0.0.1`** with a random port and a session-specific URL.
+It uses **bundled local CSS and JavaScript**, without CDNs, tracking, or cloud services.
+Results are held in memory and discarded when you stop the process with **Ctrl+C**.
+The default view is redacted; click **Reveal values** only when you want to inspect
+sensitive identifiers locally. The **Export JSON** button downloads the currently
+displayed version of the report; exporting unredacted values requires confirmation.
+
+```bash
+koaf --gui --redact      # Lock sensitive values hidden, including the report API
+koaf --gui --external    # Explicitly opt in to third-party IP/provider checks
+```
+
+The GUI does not run new checks or transmit reports. External lookups occur only if
+you explicitly start the audit with `--external`. GUI mode does not create log files
+unless `--log-file` is also supplied.
+
+The GUI is a local browser-based interface, not a hosted application. A compatible
+browser must be available on the machine. If it does not open automatically, copy
+the private URL printed in the terminal.
+
 ## Usage
 
 Run the standard local-only audit:
