@@ -63,7 +63,9 @@ KOAF helps show common exposure points, for example:
 
 ## Safety
 
-Audit mode does not modify the system.
+Standard audit mode does not modify system settings or create log files. Use `--log-file` only when you explicitly want local diagnostics saved under `logs/koaf.log`. The file is private on POSIX systems.
+
+The audit never reads machine-ID contents. It only checks whether the file is present.
 
 KOAF does not:
 
@@ -94,6 +96,8 @@ koaf --audit --external --json --redact
 Redaction hides public IPs, routes, hostnames, profile identifiers, machine identifiers, exact provider/ASN evidence, and sensitive failure details.
 
 Future hardening features should be controlled, explainable, and reversible.
+
+**Accuracy limitations:** VPN-interface detection uses interface-name heuristics and does not prove traffic is tunneled. Firefox checks parse selected user preferences and are recommendations, not universal privacy guarantees. A failed system command is reported as unknown, not treated as a secure or absent configuration.
 
 ## Installation
 
