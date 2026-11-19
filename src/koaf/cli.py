@@ -52,6 +52,9 @@ def parse_args() -> argparse.Namespace:
         help="Redact sensitive values such as public IPs, routes, hostnames, and profile names.",
     )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging.")
+    parser.add_argument(
+        "--log-file", action="store_true", help="Opt in to writing private logs/koaf.log."
+    )
     return parser.parse_args()
 
 
@@ -123,7 +126,9 @@ def render_json(findings: list[Finding], alerts: list[Finding], redact: bool) ->
 def main() -> int:
     args = parse_args()
     console = Console(stderr=args.json)
-    logger = setup_logger(verbose=args.verbose, enable_console=not args.json)
+    logger = setup_logger(
+        verbose=args.verbose, enable_console=not args.json, enable_file=args.log_file
+    )
 
     if not args.audit:
         console.print("[red]No mode selected.[/red] Use: koaf --audit")
