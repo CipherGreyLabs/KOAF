@@ -15,6 +15,7 @@ from importlib.resources import files
 from urllib.parse import parse_qs, urlsplit
 
 from koaf import __version__
+from koaf.assessment import summarize_coverage
 from koaf.models import Finding
 
 _CSP = (
@@ -63,6 +64,7 @@ class DashboardServer(ThreadingHTTPServer):
             "redacted": redact,
             "redaction_locked": self.redaction_locked,
             "external_enabled": self.external_enabled,
+            "assessment": summarize_coverage(self.findings),
             "findings": [item.to_dict(redact=redact) for item in self.findings],
             "correlation_alerts": [item.to_dict(redact=redact) for item in self.alerts],
         }
