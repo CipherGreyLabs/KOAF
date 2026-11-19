@@ -15,7 +15,7 @@ class Severity(str, Enum):
 class CheckOutcome(str, Enum):
     """Assessment state, independent from a finding's impact severity."""
 
-    PASS = "PASS"
+    PASS = "PASS"  # nosec B105 - assessment outcome label, never a password
     REVIEW = "REVIEW"
     FAIL = "FAIL"
     UNKNOWN = "UNKNOWN"
