@@ -12,6 +12,16 @@ class Severity(str, Enum):
     HIGH = "HIGH"
 
 
+class CheckOutcome(str, Enum):
+    """Assessment state, independent from a finding's impact severity."""
+
+    PASS = "PASS"
+    REVIEW = "REVIEW"
+    FAIL = "FAIL"
+    UNKNOWN = "UNKNOWN"
+    INFO = "INFO"
+
+
 @dataclass(frozen=True)
 class Finding:
     category: str
@@ -22,6 +32,7 @@ class Finding:
     evidence: str = ""
     sensitive: bool = False
     sensitive_evidence: bool = False
+    outcome: CheckOutcome = CheckOutcome.INFO
 
     def redacted(self) -> Finding:
         if not self.sensitive and not self.sensitive_evidence:
@@ -45,6 +56,7 @@ class Finding:
             "title": finding.title,
             "status": finding.status,
             "severity": finding.severity.value,
+            "outcome": finding.outcome.value,
             "details": finding.details,
             "evidence": finding.evidence,
         }
