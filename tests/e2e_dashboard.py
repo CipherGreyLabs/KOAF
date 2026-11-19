@@ -128,7 +128,7 @@ def main() -> None:
             desktop.get_by_text("203.0.113.44", exact=True).wait_for()
             expect(desktop.locator("#privacyState")).to_have_text("Sensitive values revealed")
             desktop.locator("#revealButton").click()
-            assert desktop.locator("#privacyState").inner_text() == "Sensitive values hidden"
+            expect(desktop.locator("#privacyState")).to_have_text("Sensitive values hidden")
 
             mobile = browser.new_page(
                 viewport={"width": 390, "height": 844}, device_scale_factor=1,
