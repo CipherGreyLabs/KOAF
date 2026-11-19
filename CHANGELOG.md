@@ -4,6 +4,10 @@ All notable changes to KOAF will be documented in this file.
 
 ## Unreleased
 
+_No new changes yet._
+
+## v0.1.1 — integrated on 2026-11-19 (GitHub release pending)
+
 ### User experience
 
 - Add optional `koaf --gui` local browser dashboard with responsive dark interface
@@ -24,8 +28,6 @@ All notable changes to KOAF will be documented in this file.
 - Report unavailable network information as unknown rather than safe/absent
 - Parse active Firefox preferences with user.js precedence to avoid false results
 - Add regression coverage for these protections
-
-## v0.1.1 - 2026-08-07
 
 ### Security
 
