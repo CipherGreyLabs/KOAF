@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ipaddress
+import re
 
 from koaf.models import Finding, Severity
 from koaf.shell import run_cmd
@@ -34,6 +35,15 @@ def _extract_ipv6_addresses(ip_output: str) -> tuple[list[str], list[str]]:
     return link_local, global_addrs
 
 
+def _vpn_interface_seen(ip_output: str) -> bool:
+    """Match actual interface headers, not incidental text in addresses or descriptions."""
+    for line in ip_output.splitlines():
+        match = re.match(r"^\d+:\s+([^:@\s]+)", line)
+        if match and match.group(1).startswith(("tun", "tap", "wg", "ppp")):
+            return True
+    return False
+
+
 def check_network() -> list[Finding]:
     """Inspect local interfaces and routes without changing network state."""
     findings: list[Finding] = []
@@ -42,15 +52,20 @@ def check_network() -> list[Finding]:
     ip_route = run_cmd(["ip", "route"])
     ip6_route = run_cmd(["ip", "-6", "route"])
 
-    combined = ip_addr.stdout.lower()
-    vpn_detected = any(token in combined for token in ["tun", "tap", "wg", "ppp"])
+    vpn_detected = _vpn_interface_seen(ip_addr.stdout) if ip_addr.returncode == 0 else None
 
     findings.append(
         Finding(
             category="Network",
             title="Local VPN interface inside Kali",
-            status="Detected" if vpn_detected else "Not detected inside Kali",
-            severity=Severity.LOW if vpn_detected else Severity.MEDIUM,
+            status=(
+                "Unable to inspect interfaces" if vpn_detected is None
+                else "Detected" if vpn_detected else "Not detected inside Kali"
+            ),
+            severity=(
+                Severity.INFO if vpn_detected is None
+                else Severity.LOW if vpn_detected else Severity.MEDIUM
+            ),
             details=(
                 "Checks for tun, tap, wg, or ppp interfaces inside the Kali guest. "
                 "If your VPN runs on the host machine, this may still show as not detected."
@@ -61,7 +76,12 @@ def check_network() -> list[Finding]:
     link_local_v6, global_v6 = _extract_ipv6_addresses(ip_addr.stdout)
     ipv6_default = any(line.startswith("default") for line in ip6_route.stdout.splitlines())
 
-    if global_v6 and ipv6_default:
+    if ip_addr.returncode != 0:
+        ipv6_status = "Unable to inspect IPv6 addresses"
+        ipv6_severity = Severity.INFO
+        ipv6_details = "The local ip address command failed; IPv6 posture is unknown."
+        ipv6_evidence = ""
+    elif global_v6 and ipv6_default:
         ipv6_status = "Global IPv6 with default route"
         ipv6_severity = Severity.MEDIUM
         ipv6_details = (
@@ -100,7 +120,13 @@ def check_network() -> list[Finding]:
         )
     )
 
-    default_route = ip_route.stdout.splitlines()[0] if ip_route.stdout else "No default route found"
+    if ip_route.returncode != 0:
+        default_route = "Unable to inspect IPv4 routes"
+    else:
+        default_route = next(
+            (line for line in ip_route.stdout.splitlines() if line.startswith("default ")),
+            "No default route detected",
+        )
     findings.append(
         Finding(
             category="Network",
