@@ -45,6 +45,25 @@ jobs:
       - name: Run tests
         run: python -m pytest
 
+      - name: Build and inspect distributable wheel
+        run: |
+          python -m pip wheel --no-deps --no-build-isolation . --wheel-dir dist
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          wheels = list(Path("dist").glob("koaf-*.whl"))
+          assert len(wheels) == 1, f"Expected one KOAF wheel, found {wheels!r}"
+          with ZipFile(wheels[0]) as archive:
+              contents = set(archive.namelist())
+          required = {
+              "koaf/assets/index.html",
+              "koaf/assets/app.css",
+              "koaf/assets/app.js",
+          }
+          assert required <= contents, f"Dashboard resources missing: {required - contents}"
+          PY
+
       - name: Audit Python dependencies
         # Audit only this project's dependency graph. Auditing the complete
         # runner environment can report unrelated preinstalled packages.
