@@ -26,8 +26,8 @@ def check_host() -> list[Finding]:
         )
     ]
 
-    if machine_id_path.exists():
-        machine_id = machine_id_path.read_text(errors="ignore").strip()
+    if machine_id_path.is_file():
+        # Presence is sufficient; never read or retain any bytes of this stable identifier.
         findings.append(
             Finding(
                 category="Host",
@@ -35,11 +35,9 @@ def check_host() -> list[Finding]:
                 status="Present",
                 severity=Severity.INFO,
                 details=(
-                    "A Linux machine-id exists. This is normal, but it is a stable local host "
-                    "identifier and should not be shared in public reports."
+                    "A Linux machine-id file exists. Its contents are not read or included "
+                    "in audit reports."
                 ),
-                evidence=f"{machine_id[:8]}..." if machine_id else "",
-                sensitive=True,
             )
         )
     else:

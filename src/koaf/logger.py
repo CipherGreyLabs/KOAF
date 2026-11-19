@@ -6,13 +6,31 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 
-def setup_logger(verbose: bool = False, enable_console: bool = True) -> logging.Logger:
+def setup_logger(
+    verbose: bool = False, enable_console: bool = True, enable_file: bool = False
+) -> logging.Logger:
     logger = logging.getLogger("koaf")
     logger.setLevel(logging.DEBUG)
 
     if logger.handlers:
         return logger
 
+    if enable_file:
+        _add_private_file_handler(logger)
+
+    if enable_console:
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
+        console_handler.setFormatter(
+            logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
+        )
+        logger.addHandler(console_handler)
+
+    return logger
+
+
+def _add_private_file_handler(logger: logging.Logger) -> None:
+    """File logging requires an explicit opt-in, preserving read-only audits."""
     log_directory = Path("logs")
     log_path = log_directory / "koaf.log"
     if log_directory.is_symlink() or log_path.is_symlink():
@@ -31,10 +49,3 @@ def setup_logger(verbose: bool = False, enable_console: bool = True) -> logging.
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
-    if enable_console:
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
-
-    return logger

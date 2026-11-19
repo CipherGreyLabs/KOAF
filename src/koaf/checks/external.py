@@ -6,7 +6,7 @@ import ipaddress
 import json
 from http.client import HTTPResponse
 from urllib.parse import urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from koaf.models import Finding, Severity
 
@@ -71,6 +71,19 @@ def _validated_request(url: str) -> Request:
     return Request(url, headers={"User-Agent": "KOAF/0.1.1"})
 
 
+class _AllowlistedRedirectHandler(HTTPRedirectHandler):
+    """Validate redirects before urllib makes another network request."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _validated_request(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _open_allowed(url: str, timeout: int):
+    request = _validated_request(url)
+    return build_opener(_AllowlistedRedirectHandler()).open(request, timeout=timeout)
+
+
 def _read_limited(response: HTTPResponse) -> bytes:
     # urllib may follow redirects, so validate the final destination as well.
     _validated_request(response.geturl())
@@ -83,17 +96,20 @@ def _read_limited(response: HTTPResponse) -> bytes:
 def _http_json(url: str, timeout: int = 5) -> dict:
     request = _validated_request(url)
     # URL scheme and hostname are constrained by _validated_request.
-    with urlopen(request, timeout=timeout) as response:  # nosec B310
+    with _open_allowed(request.full_url, timeout=timeout) as response:
         content_type = response.headers.get_content_type()
         if content_type != "application/json":
             raise ValueError("External lookup returned an unexpected content type")
-        return json.loads(_read_limited(response).decode())
+        data = json.loads(_read_limited(response).decode())
+        if not isinstance(data, dict):
+            raise ValueError("External lookup returned an unexpected JSON structure")
+        return data
 
 
 def _http_text(url: str, timeout: int = 5) -> str:
     request = _validated_request(url)
     # URL scheme and hostname are constrained by _validated_request.
-    with urlopen(request, timeout=timeout) as response:  # nosec B310
+    with _open_allowed(request.full_url, timeout=timeout) as response:
         return _read_limited(response).decode().strip()
 
 
@@ -117,6 +133,8 @@ def check_external(enabled: bool = False) -> list[Finding]:
 
     try:
         ip = _http_text("https://api.ipify.org", timeout=5)
+        if ipaddress.ip_address(ip).version != 4:
+            raise ValueError("External IPv4 lookup returned an invalid IPv4 address")
         findings.append(
             Finding(
                 category="External",
@@ -150,6 +168,8 @@ def check_external(enabled: bool = False) -> list[Finding]:
     try:
         ipinfo = _http_json(f"https://ipinfo.io/{ip}/json", timeout=5)
         org = ipinfo.get("org", "Unknown")
+        if not isinstance(org, str):
+            raise ValueError("External provider metadata has an invalid type")
         provider_type = _classify_provider(org)
         findings.append(
             Finding(

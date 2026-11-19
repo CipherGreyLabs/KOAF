@@ -2,6 +2,19 @@
 
 All notable changes to KOAF will be documented in this file.
 
+## Unreleased
+
+### Security and reliability
+
+- Validate third-party HTTP redirect destinations before following any redirect
+- Validate externally returned IPv4 and provider metadata before further lookup
+- Avoid reading or exposing machine-ID content, including identifier fragments
+- Make on-disk log writing explicitly opt-in with `--log-file`
+- Match VPN interface names instead of arbitrary text in network output
+- Report unavailable network information as unknown rather than safe/absent
+- Parse active Firefox preferences with user.js precedence to avoid false results
+- Add regression coverage for these protections
+
 ## v0.1.1 - 2026-08-07
 
 ### Security
