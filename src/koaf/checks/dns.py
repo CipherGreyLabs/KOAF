@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from koaf.models import Finding, Severity
+from koaf.models import CheckOutcome, Finding, Severity
 from koaf.shell import run_cmd
 
 
@@ -16,6 +16,7 @@ def check_dns() -> list[Finding]:
                 title="Resolver configuration",
                 status="Missing /etc/resolv.conf",
                 severity=Severity.HIGH,
+                outcome=CheckOutcome.REVIEW,
                 details="The system resolver configuration file could not be found.",
             )
         ]
@@ -36,6 +37,7 @@ def check_dns() -> list[Finding]:
                 title="Configured resolvers",
                 status="No resolvers detected",
                 severity=Severity.HIGH,
+                outcome=CheckOutcome.REVIEW,
                 details="No nameserver entries were found in /etc/resolv.conf.",
             )
         ]
@@ -46,6 +48,7 @@ def check_dns() -> list[Finding]:
             title="Configured resolvers",
             status=", ".join(resolvers),
             severity=Severity.LOW,
+            outcome=CheckOutcome.INFO,
             details="Parses /etc/resolv.conf to identify configured DNS resolvers.",
             sensitive=True,
         )
@@ -69,6 +72,10 @@ def check_dns() -> list[Finding]:
                 title="Local DNS stub resolver",
                 status="Detected" if resolved.returncode == 0 else "Detected, upstream unknown",
                 severity=Severity.INFO,
+                outcome=(
+                    CheckOutcome.INFO if resolved.returncode == 0 and resolved.stdout
+                    else CheckOutcome.UNKNOWN
+                ),
                 details=details,
                 evidence=evidence,
                 sensitive=bool(evidence),

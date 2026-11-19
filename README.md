@@ -239,6 +239,25 @@ Public IPv6 visible externally
 
 With `--explain`, KOAF also prints plain language explanations for each finding and correlation alert.
 
+### How to interpret results (v0.2 development)
+
+KOAF separates **outcome** from **severity**:
+
+- `PASS`: a checked configuration matches the documented KOAF recommendation;
+  not proof of full anonymity or an effective policy across every runtime.
+- `REVIEW`: an observed value requires interpretation or follow-up.
+- `FAIL`: a checked control demonstrably failed (reserved for confirmed failure).
+- `UNKNOWN`: the check was skipped, inconclusive, or lacked sufficient evidence.
+- `INFO`: observational context without a pass/fail claim.
+
+`assessment` reports how many primary checks were assessed and how many
+remain unknown, by category. It excludes correlated alerts and summary cards;
+its coverage count is **not** a confidence probability, risk percentage, or
+claim that every operating-system privacy surface has been inspected.
+
+The overall privacy summary now counts only primary `REVIEW` / `FAIL`
+findings. Correlation alerts are explanatory, so they cannot inflate a score.
+
 Example JSON shape:
 
 ```json
@@ -247,6 +266,16 @@ Example JSON shape:
   "version": "0.1.1",
   "mode": "audit",
   "redacted": true,
+  "assessment": {
+    "status": "NO_DATA",
+    "total_controls": 0,
+    "assessed_controls": 0,
+    "unknown_controls": 0,
+    "outcomes": {
+      "PASS": 0, "REVIEW": 0, "FAIL": 0, "UNKNOWN": 0, "INFO": 0
+    },
+    "categories": {}
+  },
   "findings": [],
   "correlation_alerts": []
 }

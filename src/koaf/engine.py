@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from collections import Counter
 
+from koaf.assessment import summarize_coverage
 from koaf.checks import check_dns, check_external, check_firefox, check_host, check_network
-from koaf.models import Finding, Severity
+from koaf.models import CheckOutcome, Finding, Severity
 
 
 class AuditEngine:
@@ -34,8 +35,9 @@ class AuditEngine:
                         category="Engine",
                         title=f"{check_name} failed",
                         status=str(exc),
-                        severity=Severity.HIGH,
-                        details="The check failed but the audit continued safely.",
+                        severity=Severity.INFO,
+                        outcome=CheckOutcome.UNKNOWN,
+                        details="The check failed. No conclusion is possible for this control.",
                         sensitive=True,
                     )
                 )
@@ -174,26 +176,49 @@ class AuditEngine:
         return alerts
 
     def score(self, findings: list[Finding], alerts: list[Finding]) -> list[Finding]:
-        combined = findings + alerts
-        counts = Counter(item.severity for item in combined)
+        """Summarize *primary* review items; correlation alerts cannot inflate risk."""
+        # Keep the public method signature stable; alerts are explanatory, not primary checks.
+        del alerts
+        controls = [f for f in findings if f.category not in {"Summary", "Correlation"}]
+        needs_attention = [
+            f for f in controls if f.outcome in {CheckOutcome.REVIEW, CheckOutcome.FAIL}
+        ]
+        counts = Counter(item.severity for item in needs_attention)
+        coverage = summarize_coverage(controls)
 
         if counts[Severity.HIGH] > 0:
-            status = "High exposure indicators present"
+            status = "High-priority findings require review"
             severity = Severity.HIGH
-        elif counts[Severity.MEDIUM] >= 4:
-            status = "Moderate exposure indicators present"
-            severity = Severity.MEDIUM
+            outcome = CheckOutcome.REVIEW
         elif counts[Severity.MEDIUM] > 0:
-            status = "Some exposure indicators present"
+            status = "Some findings require review"
             severity = Severity.MEDIUM
-        else:
-            status = "Low exposure indicators observed"
+            outcome = CheckOutcome.REVIEW
+        elif counts[Severity.LOW] > 0:
+            status = "Low-priority findings require review"
             severity = Severity.LOW
+            outcome = CheckOutcome.REVIEW
+        elif coverage["assessed_controls"] == 0:
+            status = "Insufficient information to assess posture"
+            severity = Severity.INFO
+            outcome = CheckOutcome.UNKNOWN
+        elif coverage["unknown_controls"] > 0:
+            status = "No prioritized issues in assessed checks; coverage is partial"
+            severity = Severity.INFO
+            outcome = CheckOutcome.UNKNOWN
+        else:
+            status = "No prioritized issues found in reported checks"
+            severity = Severity.INFO
+            outcome = CheckOutcome.INFO
 
         details = (
-            "This summary is a simple severity-based overview, not a mathematical anonymity "
-            f"score. Counts: HIGH={counts[Severity.HIGH]}, MEDIUM={counts[Severity.MEDIUM]}, "
-            f"LOW={counts[Severity.LOW]}, INFO={counts[Severity.INFO]}."
+            "Only primary controls with REVIEW or FAIL outcomes contribute to this "
+            "severity-based overview; correlation alerts are excluded. "
+            f"Actionable: HIGH={counts[Severity.HIGH]}, MEDIUM={counts[Severity.MEDIUM]}, "
+            f"LOW={counts[Severity.LOW]}. "
+            f"Coverage: {coverage['assessed_controls']}/{coverage['total_controls']} "
+            f"reported controls assessed, {coverage['unknown_controls']} unknown. "
+            "This is not an anonymity score or a proof of safe routing."
         )
 
         return [
@@ -202,6 +227,7 @@ class AuditEngine:
                 title="Overall privacy surface",
                 status=status,
                 severity=severity,
+                outcome=outcome,
                 details=details,
             )
         ]

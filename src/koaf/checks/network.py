@@ -5,7 +5,7 @@ from __future__ import annotations
 import ipaddress
 import re
 
-from koaf.models import Finding, Severity
+from koaf.models import CheckOutcome, Finding, Severity
 from koaf.shell import run_cmd
 
 
@@ -66,6 +66,10 @@ def check_network() -> list[Finding]:
                 Severity.INFO if vpn_detected is None
                 else Severity.LOW if vpn_detected else Severity.MEDIUM
             ),
+            outcome=(
+                CheckOutcome.UNKNOWN if vpn_detected is None
+                else CheckOutcome.INFO if vpn_detected else CheckOutcome.REVIEW
+            ),
             details=(
                 "Checks for tun, tap, wg, or ppp interfaces inside the Kali guest. "
                 "If your VPN runs on the host machine, this may still show as not detected."
@@ -117,6 +121,11 @@ def check_network() -> list[Finding]:
             details=ipv6_details,
             evidence=ipv6_evidence,
             sensitive=bool(ipv6_evidence),
+            outcome=(
+                CheckOutcome.UNKNOWN if ip_addr.returncode != 0 or (
+                    bool(global_v6) and ip6_route.returncode != 0
+                ) else CheckOutcome.REVIEW if global_v6 else CheckOutcome.INFO
+            ),
         )
     )
 
@@ -135,6 +144,11 @@ def check_network() -> list[Finding]:
             severity=Severity.INFO,
             details="Shows the primary IPv4 route used by the Kali guest.",
             sensitive=True,
+            outcome=(
+                CheckOutcome.UNKNOWN if ip_route.returncode != 0
+                else CheckOutcome.REVIEW if default_route == "No default route detected"
+                else CheckOutcome.INFO
+            ),
         )
     )
 

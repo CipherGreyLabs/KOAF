@@ -4,7 +4,15 @@ All notable changes to KOAF will be documented in this file.
 
 ## Unreleased
 
-_No new changes yet._
+### Audit semantics (planned for v0.2.0)
+
+- Add explicit PASS, REVIEW, FAIL, UNKNOWN and INFO states independent of risk severity
+- Treat opted-out external checks, inconclusive IPv6 lookups, failed shell commands and
+  unconfigured Firefox preferences as unknown rather than safe or confirmed exposure
+- Calculate assessment coverage from primary checks, excluding correlations and summaries
+- Avoid double-counting correlations when summarizing prioritized privacy findings
+- Include outcome and assessment coverage in JSON, terminal output and the local GUI
+- Add regression tests for coverage, scoring, redaction and CLI/GUI consistency
 
 ## v0.1.1 — integrated on 2026-11-19 (GitHub release pending)
 

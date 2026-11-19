@@ -36,6 +36,17 @@ function renderOverview() {
   const report = state.report;
   const findings = report.findings || [];
   const counts = countSeverities(findings);
+  const actionCounts = countSeverities(
+    findings.filter((item) => item.outcome === "REVIEW" || item.outcome === "FAIL")
+  );
+  const assessment = report.assessment || {
+    total_controls: findings.length,
+    assessed_controls: findings.length,
+    unknown_controls: 0
+  };
+
+  setText("coverageValue", assessment.assessed_controls + " / " + assessment.total_controls);
+  setText("coverageDescription", assessment.unknown_controls + " unknown or unassessed controls. This describes reported checks, not total system safety.");
 
   setText("versionLabel", "KOAF / v" + report.version);
   setText("highCount", counts.HIGH);
@@ -51,15 +62,18 @@ function renderOverview() {
   if (!findings.length) {
     setText("heroTitle", "No findings returned");
     setText("heroDescription", "No checks produced results. Review the terminal for errors.");
-  } else if (counts.HIGH) {
+  } else if (actionCounts.HIGH) {
     setText("heroTitle", "High-priority signals need review");
-    setText("heroDescription", "Some checks identified potential exposure indicators. Read each finding before taking action.");
-  } else if (counts.MEDIUM) {
-    setText("heroTitle", "A few settings need attention");
-    setText("heroDescription", "The scan completed. Review medium-priority findings and verify your expected network model.");
+    setText("heroDescription", "Some assessed controls need attention. Inspect the evidence and network context.");
+  } else if (actionCounts.MEDIUM || actionCounts.LOW) {
+    setText("heroTitle", "Some findings need review");
+    setText("heroDescription", "Review the flagged settings against your intended privacy model.");
+  } else if (assessment.unknown_controls > 0) {
+    setText("heroTitle", "Audit complete, coverage partial");
+    setText("heroDescription", "No prioritized issues were found in assessed checks. Unknown or opted-out checks prevent a broader conclusion.");
   } else {
-    setText("heroTitle", "Audit completed successfully");
-    setText("heroDescription", "No high- or medium-priority findings were reported by the checks performed.");
+    setText("heroTitle", "No prioritized findings reported");
+    setText("heroDescription", "Completed checks did not report review-required items. This does not prove anonymity or safe routing.");
   }
 
   const bars = document.getElementById("severityBars");
@@ -161,8 +175,11 @@ function renderFindings() {
     main.append(element("div", "finding-title", item.title));
     main.append(element("div", "finding-status", item.status));
     top.append(main);
-    const tag = element("span", "severity-tag severity-" + item.severity.toLowerCase(), item.severity);
-    top.append(tag);
+    const tags = element("div", "tag-stack");
+    const outcome = item.outcome || "INFO";
+    tags.append(element("span", "outcome-tag outcome-" + outcome.toLowerCase(), outcome));
+    tags.append(element("span", "severity-tag severity-" + item.severity.toLowerCase(), item.severity));
+    top.append(tags);
     row.append(top);
 
     if (item.details || item.evidence) {
