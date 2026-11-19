@@ -21,7 +21,7 @@ It is not meant to be a magic anonymity solution. It is an educational audit too
 
 ## What KOAF currently checks
 
-KOAF v0.1.0 performs read only checks for:
+KOAF v0.1.1 performs read only checks for:
 
 * Local VPN interface visibility inside Kali
 * IPv4 and IPv6 exposure
@@ -75,13 +75,13 @@ KOAF does not:
 * Spoof identifiers
 * Claim to guarantee anonymity
 
-By default, KOAF stays local and does not contact external lookup services. To check public IPv4, public IPv6 availability, and basic provider classification, explicitly use:
+By default, KOAF stays local and does not contact external lookup services. This privacy-first default is enforced both by the CLI and by KOAF's internal audit/check APIs. To check public IPv4, public IPv6 availability, and basic provider classification, explicitly use:
 
 ```bash
 koaf --audit --external
 ```
 
-External mode contacts `api.ipify.org`, `api6.ipify.org`, and `ipinfo.io`. KOAF only permits HTTPS requests to these hosts, limits response sizes, and does not send local audit reports.
+External mode contacts `api.ipify.org`, `api6.ipify.org`, and `ipinfo.io`. KOAF only permits HTTPS requests to these hosts, validates redirect destinations, limits response sizes, and does not send local audit reports.
 
 If you want to share output safely, use redaction:
 
@@ -155,6 +155,8 @@ To explicitly keep external lookup services disabled:
 koaf --audit --no-external
 ```
 
+`--no-external` is retained for backwards compatibility. External checks are already disabled by default, and it cannot be combined with `--external`.
+
 To redact sensitive values such as IPs, routes, hostnames, and profile names:
 
 ```bash
@@ -210,7 +212,7 @@ Example JSON shape:
 ```json
 {
   "tool": "KOAF",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "mode": "audit",
   "redacted": true,
   "findings": [],
@@ -235,7 +237,7 @@ ruff check .
 Run tests:
 
 ```bash
-pytest
+python -m pytest
 ```
 
 ## Important limitations
@@ -262,7 +264,7 @@ Planned improvements:
 
 ## Project status
 
-Current version: **v0.1.0**
+Current version: **v0.1.1**
 
 KOAF is currently an audit first foundation. The focus is visibility, explanation, and safe learning before adding automatic hardening.
 

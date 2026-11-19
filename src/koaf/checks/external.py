@@ -68,7 +68,7 @@ def _validated_request(url: str) -> Request:
         raise ValueError("External lookup URL is not permitted")
     if parsed.username or parsed.password or parsed.port not in {None, 443}:
         raise ValueError("External lookup URL contains unsupported authority data")
-    return Request(url, headers={"User-Agent": "KOAF/0.1.0"})
+    return Request(url, headers={"User-Agent": "KOAF/0.1.1"})
 
 
 def _read_limited(response: HTTPResponse) -> bytes:
@@ -97,7 +97,7 @@ def _http_text(url: str, timeout: int = 5) -> str:
         return _read_limited(response).decode().strip()
 
 
-def check_external(enabled: bool = True) -> list[Finding]:
+def check_external(enabled: bool = False) -> list[Finding]:
     """Inspect public visibility only when external checks are explicitly enabled."""
     if not enabled:
         return [
@@ -107,8 +107,8 @@ def check_external(enabled: bool = True) -> list[Finding]:
                 status="Skipped by user",
                 severity=Severity.INFO,
                 details=(
-                    "External IP lookup was disabled with --no-external. "
-                    "This avoids contacting a third-party IP check service."
+                    "External IP lookup is disabled by default. Use --external to explicitly "
+                    "enable third-party visibility checks."
                 ),
             )
         ]
@@ -142,6 +142,7 @@ def check_external(enabled: bool = True) -> list[Finding]:
                     "HTTPS blocking."
                 ),
                 evidence=str(exc),
+                sensitive_evidence=True,
             )
         )
         return findings

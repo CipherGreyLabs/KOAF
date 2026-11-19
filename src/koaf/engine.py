@@ -7,7 +7,7 @@ from koaf.models import Finding, Severity
 
 
 class AuditEngine:
-    def __init__(self, logger, external_enabled: bool = True):
+    def __init__(self, logger, external_enabled: bool = False):
         self.logger = logger
         self.external_enabled = external_enabled
 
