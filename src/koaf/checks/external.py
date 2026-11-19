@@ -8,7 +8,7 @@ from http.client import HTTPResponse
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from koaf.models import Finding, Severity
+from koaf.models import CheckOutcome, Finding, Severity
 
 _ALLOWED_EXTERNAL_HOSTS = frozenset({"api.ipify.org", "api6.ipify.org", "ipinfo.io"})
 _MAX_RESPONSE_BYTES = 64 * 1024
@@ -122,6 +122,7 @@ def check_external(enabled: bool = False) -> list[Finding]:
                 title="Public IPv4",
                 status="Skipped by user",
                 severity=Severity.INFO,
+                outcome=CheckOutcome.UNKNOWN,
                 details=(
                     "External IP lookup is disabled by default. Use --external to explicitly "
                     "enable third-party visibility checks."
@@ -141,6 +142,7 @@ def check_external(enabled: bool = False) -> list[Finding]:
                 title="Public IPv4",
                 status=ip,
                 severity=Severity.INFO,
+                outcome=CheckOutcome.INFO,
                 details=(
                     "Shows the IPv4 address observed by an external service. This helps compare "
                     "visible IP with expected VPN or ISP exit."
@@ -154,7 +156,8 @@ def check_external(enabled: bool = False) -> list[Finding]:
                 category="External",
                 title="Public IPv4",
                 status="Unable to retrieve",
-                severity=Severity.MEDIUM,
+                severity=Severity.INFO,
+                outcome=CheckOutcome.UNKNOWN,
                 details=(
                     "External IPv4 lookup failed. This may be due to no internet or "
                     "HTTPS blocking."
@@ -177,6 +180,7 @@ def check_external(enabled: bool = False) -> list[Finding]:
                 title="External provider classification",
                 status=provider_type,
                 severity=Severity.INFO,
+                outcome=CheckOutcome.INFO,
                 details=(
                     "Classifies the visible external provider using public IP registration data. "
                     "This is a heuristic, not proof of VPN or ISP usage."
@@ -192,6 +196,7 @@ def check_external(enabled: bool = False) -> list[Finding]:
                 title="External provider classification",
                 status="Unable to classify",
                 severity=Severity.INFO,
+                outcome=CheckOutcome.UNKNOWN,
                 details="Provider classification failed. Public IPv4 detection still completed.",
                 evidence=str(exc),
                 sensitive_evidence=True,
@@ -200,30 +205,33 @@ def check_external(enabled: bool = False) -> list[Finding]:
 
     try:
         ipv6 = _http_text("https://api6.ipify.org", timeout=5)
-        if ipaddress.ip_address(ipv6).version == 6:
-            findings.append(
-                Finding(
-                    category="External",
-                    title="Public IPv6",
-                    status=ipv6,
-                    severity=Severity.MEDIUM,
+        if ipaddress.ip_address(ipv6).version != 6:
+            raise ValueError("External IPv6 lookup returned a non-IPv6 address")
+        findings.append(
+            Finding(
+                category="External",
+                title="Public IPv6",
+                status=ipv6,
+                severity=Severity.MEDIUM,
+                outcome=CheckOutcome.REVIEW,
                     details=(
                         "A public IPv6 address was visible externally. Compare this with IPv4 "
                         "to detect split routing or IPv6 leak surfaces."
                     ),
-                    sensitive=True,
-                )
+                sensitive=True,
             )
+        )
     except Exception:
         findings.append(
             Finding(
                 category="External",
                 title="Public IPv6",
                 status="Not detected or unavailable",
-                severity=Severity.LOW,
+                severity=Severity.INFO,
+                outcome=CheckOutcome.UNKNOWN,
                 details=(
                     "KOAF could not detect a public IPv6 address through the external lookup. "
-                    "This usually means IPv6 egress is unavailable or blocked."
+                    "This is inconclusive and does not prove that IPv6 egress is absent."
                 ),
             )
         )
