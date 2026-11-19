@@ -101,16 +101,22 @@ def main() -> None:
             desktop.screenshot(path=str(SCREENSHOTS / "koaf-desktop-1440.png"), full_page=True)
 
             desktop.locator('[data-filter="HIGH"]').click()
-            assert desktop.locator(".finding").count() == 1
+            expect(desktop.locator(".finding")).to_have_count(1)
             assert desktop.locator(".finding-title").inner_text() == "Resolver configuration"
             desktop.locator('[data-filter="ALL"]').click()
-            assert desktop.locator(".finding").count() == 5
+            expect(desktop.locator(".finding")).to_have_count(5)
 
             desktop.locator("#searchInput").fill("Firefox")
-            assert desktop.locator(".finding").count() == 1
+            expect(desktop.locator(".finding")).to_have_count(1)
             desktop.locator("#searchInput").fill("")
             desktop.locator('[data-category="Browser"]').click()
-            assert desktop.locator(".finding").count() == 1
+            print("CATEGORY DEBUG", {
+                "active": desktop.locator("#categoryNav .active").all_inner_texts(),
+                "count": desktop.locator(".finding").count(),
+                "titles": desktop.locator(".finding-title").all_inner_texts(),
+                "filters": desktop.locator(".filter.active").all_inner_texts(),
+            }, flush=True)
+            expect(desktop.locator(".finding")).to_have_count(1)
             desktop.locator('[data-category="All"]').click()
 
             with desktop.expect_download() as download_info:
@@ -137,7 +143,7 @@ def main() -> None:
             mobile.on("pageerror", lambda error: errors.append(str(error)))
             mobile.goto(server.dashboard_url, wait_until="networkidle")
             expect(mobile.locator("#findingCount")).to_have_text("(5)")
-            assert mobile.locator(".finding").count() == 5
+            expect(mobile.locator(".finding")).to_have_count(5)
             dimensions = mobile.evaluate("""() => ({
                 viewport: window.innerWidth,
                 pageWidth: document.documentElement.scrollWidth
