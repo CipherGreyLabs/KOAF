@@ -95,6 +95,8 @@ def main() -> None:
             assert desktop.locator("#mediumCount").inner_text() == "1"
             assert desktop.locator("#lowCount").inner_text() == "2"
             assert desktop.locator("#infoCount").inner_text() == "1"
+            expect(desktop.locator("#coverageValue")).to_have_text("5 / 5")
+            expect(desktop.locator(".outcome-tag")).to_have_count(5)
             assert desktop.locator("#findingCount").inner_text() == "(5)"
             expect(desktop.locator("#privacyState")).to_have_text("Sensitive values hidden")
             assert desktop.get_by_text("203.0.113.44").count() == 0
