@@ -9,6 +9,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from koaf import __version__
+from koaf.assessment import summarize_coverage
 from koaf.engine import AuditEngine
 from koaf.logger import setup_logger
 from koaf.models import Finding, Severity
@@ -70,6 +71,7 @@ def render_table(console: Console, title: str, findings: list[Finding], redact: 
     table.add_column("Category", style="cyan")
     table.add_column("Finding")
     table.add_column("Status")
+    table.add_column("Outcome")
     table.add_column("Severity", style="bold")
 
     for original in findings:
@@ -85,6 +87,7 @@ def render_table(console: Console, title: str, findings: list[Finding], redact: 
             finding.category,
             finding.title,
             finding.status,
+            finding.outcome.value,
             f"[{color}]{finding.severity.value}[/{color}]",
         )
 
@@ -104,7 +107,8 @@ def render_explanations(
         body = (
             f"[bold]Category:[/bold] {finding.category}\n"
             f"[bold]Status:[/bold] {finding.status}\n"
-            f"[bold]Severity:[/bold] {finding.severity.value}\n\n"
+            f"[bold]Severity:[/bold] {finding.severity.value}\n"
+            f"[bold]Outcome:[/bold] {finding.outcome.value}\n\n"
             f"{finding.details}"
         )
 
@@ -120,6 +124,7 @@ def render_json(findings: list[Finding], alerts: list[Finding], redact: bool) ->
         "version": __version__,
         "mode": "audit",
         "redacted": redact,
+        "assessment": summarize_coverage(findings),
         "findings": [finding.to_dict(redact=redact) for finding in findings],
         "correlation_alerts": [alert.to_dict(redact=redact) for alert in alerts],
     }
