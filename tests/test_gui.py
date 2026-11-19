@@ -119,3 +119,38 @@ def test_locked_http_report_ignores_reveal_query():
         server.shutdown()
         server.server_close()
         worker.join(timeout=3)
+
+
+def test_gui_cli_uses_local_first_engine_and_no_file_logging(monkeypatch):
+    import sys
+
+    from koaf import cli, gui
+
+    observed = {}
+
+    class SilentLogger:
+        def info(self, *_args, **_kwargs):
+            return None
+
+    class FakeEngine:
+        def __init__(self, logger, external_enabled=False):
+            observed["external_enabled"] = external_enabled
+
+        def run(self):
+            return _demo_findings(), []
+
+    monkeypatch.setattr(sys, "argv", ["koaf", "--gui"])
+    monkeypatch.setattr(
+        cli, "setup_logger", lambda **kwargs: observed.setdefault("logging", kwargs)
+        and SilentLogger()
+    )
+    monkeypatch.setattr(cli, "AuditEngine", FakeEngine)
+    monkeypatch.setattr(
+        gui, "launch_dashboard", lambda findings, alerts, **kwargs: observed.update(kwargs)
+    )
+
+    assert cli.main() == 0
+    assert observed["external_enabled"] is False
+    assert observed["redaction_locked"] is False
+    assert observed["logging"]["enable_file"] is False
+    assert observed["logging"]["enable_console"] is False
