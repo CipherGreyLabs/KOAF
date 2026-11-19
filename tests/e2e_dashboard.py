@@ -110,14 +110,6 @@ def main() -> None:
             expect(desktop.locator(".finding")).to_have_count(1)
             desktop.locator("#searchInput").fill("")
             desktop.locator('[data-category="Browser"]').click()
-            print("CATEGORY DEBUG", {
-                "active": desktop.locator("#categoryNav .active").all_inner_texts(),
-                "count": desktop.locator(".finding").count(),
-                "titles": desktop.locator(".finding-title").all_inner_texts(),
-                "filters": desktop.locator(".filter.active").all_inner_texts(),
-                "state": desktop.evaluate("state.category"),
-                "pageerrors": errors,
-            }, flush=True)
             expect(desktop.locator(".finding")).to_have_count(1)
             desktop.locator('[data-category="All"]').click()
 
