@@ -93,3 +93,23 @@ def test_default_external_check_is_explicitly_unknown():
     finding = check_external()[0]
     assert finding.outcome == CheckOutcome.UNKNOWN
     assert finding.severity == Severity.INFO
+
+
+def test_inconclusive_external_ipv6_remains_unknown(monkeypatch):
+    from koaf.checks import external
+
+    def fake_text(url: str, timeout: int = 5) -> str:
+        if "api6.ipify.org" in url:
+            return "198.51.100.44"  # An IPv4 response is not a confirmed IPv6 absence.
+        return "203.0.113.44"
+
+    monkeypatch.setattr(external, "_http_text", fake_text)
+    monkeypatch.setattr(
+        external, "_http_json", lambda _url, timeout=5: {"org": "Example ISP"}
+    )
+    findings = external.check_external(enabled=True)
+    ipv6 = next(item for item in findings if item.title == "Public IPv6")
+
+    assert ipv6.outcome == CheckOutcome.UNKNOWN
+    assert ipv6.severity == Severity.INFO
+    assert "does not prove" in ipv6.details
