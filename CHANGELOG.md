@@ -4,6 +4,16 @@ All notable changes to KOAF will be documented in this file.
 
 ## Unreleased
 
+### User experience
+
+- Add optional `koaf --gui` local browser dashboard with responsive dark interface
+- Add category navigation, severity filters, search, details, and JSON download
+- Start with sensitive fields redacted; support explicit reveal or permanent `--redact` lock
+- Serve bundled assets on loopback using a random port and unguessable session path
+- Set strict browser security headers; do not log HTTP paths or upload reports
+- Add integration tests for report redaction, local assets, and request isolation
+
+
 ### Security and reliability
 
 - Validate third-party HTTP redirect destinations before following any redirect
